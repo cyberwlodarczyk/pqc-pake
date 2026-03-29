@@ -3,10 +3,11 @@
   "image": "docker.io/cyberwlodarczyk/pqc-pakes:dev",
   "customizations": {
     "vscode": {
-      "extensions": ["ms-vscode.cpptools"],
+      "extensions": ["ms-vscode.cpptools", "ms-vscode.cmake-tools"],
       "settings": {
         "C_Cpp.default.includePath": [
           "${containerEnv:LIBOQS_DIR}/include",
+          "${containerEnv:PQC_PAKES_DIR}/include",
           "/usr/include"
         ]
       }
