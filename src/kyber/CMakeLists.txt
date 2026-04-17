@@ -24,6 +24,7 @@ install(TARGETS kyber
 )
 
 install(FILES
-    kem.h params.h
+    api.h cbd.h fips202.h indcpa.h kem.h ntt.h params.h poly.h polyvec.h
+    randombytes.h reduce.h symmetric.h verify.h
     DESTINATION include/kyber
 )

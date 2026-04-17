@@ -3,52 +3,24 @@
 #include <string.h>
 #include <pqc-pake/kem.h>
 
-#define N 100
-
-int test(PQC_PAKE_KEM_a *a_kem, PQC_PAKE_KEM_b *b_kem)
+int test_exchange()
 {
-    uint8_t *a_public_key = NULL;
-    uint8_t *a_secret_key = NULL;
-    if (!PQC_PAKE_KEM_a_keygen(a_kem, &a_public_key, &a_secret_key))
-    {
-        return 0;
-    }
-    uint8_t *a_public_seed = NULL;
-    uint8_t *a_public_poly = NULL;
-    if (!PQC_PAKE_KEM_a_split(
-            a_kem,
-            &a_public_seed,
-            &a_public_poly,
-            a_public_key))
-    {
-        return 0;
-    }
-    uint8_t *b_public_key = NULL;
-    if (!PQC_PAKE_KEM_b_join(b_kem,
-                             &b_public_key,
-                             a_public_seed,
-                             a_public_poly))
-    {
-        return 0;
-    }
-    uint8_t *b_ciphertext = NULL;
-    uint8_t *b_shared_secret = NULL;
-    if (!PQC_PAKE_KEM_b_encaps(
-            b_kem,
-            &b_ciphertext,
-            &b_shared_secret,
-            b_public_key))
-    {
-        return 0;
-    }
-    uint8_t *a_shared_secret = NULL;
-    if (!PQC_PAKE_KEM_a_decaps(a_kem, &a_shared_secret, b_ciphertext))
-    {
-        return 0;
-    }
+    uint8_t public_key_1[PQC_PAKE_KEM_len_public_key];
+    uint8_t secret_key[PQC_PAKE_KEM_len_secret_key];
+    PQC_PAKE_KEM_keygen(public_key_1, secret_key);
+    uint8_t seed[PQC_PAKE_KEM_len_seed];
+    uint8_t poly[PQC_PAKE_KEM_len_poly];
+    PQC_PAKE_KEM_split(seed, poly, public_key_1);
+    uint8_t public_key_2[PQC_PAKE_KEM_len_public_key];
+    PQC_PAKE_KEM_join(public_key_2, seed, poly);
+    uint8_t ciphertext[PQC_PAKE_KEM_len_ciphertext];
+    uint8_t shared_secret_1[PQC_PAKE_KEM_len_shared_secret];
+    PQC_PAKE_KEM_encaps(ciphertext, shared_secret_1, public_key_2);
+    uint8_t shared_secret_2[PQC_PAKE_KEM_len_shared_secret];
+    PQC_PAKE_KEM_decaps(shared_secret_2, ciphertext, secret_key);
     if (memcmp(
-            a_shared_secret,
-            b_shared_secret,
+            shared_secret_1,
+            shared_secret_2,
             PQC_PAKE_KEM_len_shared_secret) == 0)
     {
         return 1;
@@ -59,40 +31,14 @@ int test(PQC_PAKE_KEM_a *a_kem, PQC_PAKE_KEM_b *b_kem)
     }
 }
 
-int test_n(int n)
-{
-    for (int i = 0; i < n; i++)
-    {
-        PQC_PAKE_KEM_a *a_kem = PQC_PAKE_KEM_a_new();
-        if (a_kem == NULL)
-        {
-            return 0;
-        }
-        PQC_PAKE_KEM_b *b_kem = PQC_PAKE_KEM_b_new();
-        if (b_kem == NULL)
-        {
-            PQC_PAKE_KEM_a_free(a_kem);
-            return 0;
-        }
-        int ok = test(a_kem, b_kem);
-        PQC_PAKE_KEM_a_free(a_kem);
-        PQC_PAKE_KEM_b_free(b_kem);
-        if (!ok)
-        {
-            return 0;
-        }
-    }
-    return 1;
-}
-
 int main()
 {
-    if (test_n(N))
+    for (int i = 0; i < 1000; i++)
     {
-        return EXIT_SUCCESS;
+        if (!test_exchange())
+        {
+            return EXIT_FAILURE;
+        }
     }
-    else
-    {
-        return EXIT_SUCCESS;
-    }
+    return EXIT_SUCCESS;
 }
