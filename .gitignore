@@ -1,2 +1,4 @@
 build
 bin
+src/rkem/ntt_init
+src/rkem/rkem_init
