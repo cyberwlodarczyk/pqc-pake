@@ -43,6 +43,14 @@ void polyvec_rand(polyvec *v)
     }
 }
 
+void polyvec_rand_center(polyvec *v)
+{
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_rand_center(&v->vec[i]);
+    }
+}
+
 int poly_compare(const poly *p1, const poly *p2)
 {
     for (int i = 0; i < RKEM_N; i++)
@@ -105,7 +113,7 @@ int polyvec_compression_check(const polyvec *v1, const polyvec *v2)
 int test_poly_bytes()
 {
     poly p1;
-    poly_rand(&p1);
+    poly_rand_center(&p1);
     uint8_t buf[RKEM_POLYBYTES];
     poly_tobytes(buf, &p1);
     poly p2;
@@ -116,7 +124,7 @@ int test_poly_bytes()
 int test_polyvec_bytes()
 {
     polyvec v1;
-    polyvec_rand(&v1);
+    polyvec_rand_center(&v1);
     uint8_t buf[RKEM_POLYVECBYTES];
     polyvec_tobytes(buf, &v1);
     polyvec v2;
@@ -279,7 +287,7 @@ int test_poly_eta3()
     return 1;
 }
 
-int test_kem()
+int test_rkem_derand()
 {
     uint8_t pk[RKEM_PUBLICKEYBYTES];
     uint8_t sk[RKEM_SECRETKEYBYTES];
@@ -288,7 +296,31 @@ int test_kem()
     uint8_t ss1[RKEM_MSGBYTES];
     RKEM_encaps(ct, ss1, pk);
     uint8_t ss2[RKEM_MSGBYTES];
-    RKEM_decaps(ss2, ct, sk);
+    RKEM_decaps_derand(ss2, ct, sk);
+    for (int i = 0; i < RKEM_MSGBYTES; i++)
+    {
+        if (ss1[i] != ss2[i])
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int test_rkem()
+{
+    uint8_t pk[RKEM_PUBLICKEYBYTES];
+    uint8_t sk[RKEM_SECRETKEYBYTES];
+    RKEM_keypair(pk, sk);
+    uint8_t seed[RKEM_SYMBYTES];
+    randombytes(seed, RKEM_SYMBYTES);
+    uint8_t rand_pk[RKEM_PUBLICKEYBYTES];
+    RKEM_rand(rand_pk, seed, pk);
+    uint8_t ct[RKEM_CIPHERTEXTBYTES];
+    uint8_t ss1[RKEM_MSGBYTES];
+    RKEM_encaps(ct, ss1, rand_pk);
+    uint8_t ss2[RKEM_MSGBYTES];
+    RKEM_decaps(ss2, ct, sk, seed);
     for (int i = 0; i < RKEM_MSGBYTES; i++)
     {
         if (ss1[i] != ss2[i])
@@ -381,7 +413,14 @@ int main()
     }
     for (int i = 0; i < 1000; i++)
     {
-        if (!test_kem())
+        if (!test_rkem_derand())
+        {
+            return EXIT_FAILURE;
+        }
+    }
+    for (int i = 0; i < 1000; i++)
+    {
+        if (!test_rkem())
         {
             return EXIT_FAILURE;
         }

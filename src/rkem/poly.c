@@ -1,4 +1,4 @@
-#include <string.h>
+#include <stdio.h>
 #include <kyber/symmetric.h>
 #include "cbd.h"
 #include "ntt.h"
@@ -39,7 +39,7 @@ void poly_frombytes(poly *r, const uint8_t a[RKEM_POLYBYTES])
         int pos = 0;
         for (int j = 0; j < 8; j++)
         {
-            uint16_t t;
+            uint16_t t = 0;
             for (int p = 12; p >= 0; p--)
             {
                 int k = i * 13 + pos / 8;
@@ -54,6 +54,7 @@ void poly_frombytes(poly *r, const uint8_t a[RKEM_POLYBYTES])
                 }
                 pos++;
             }
+            t -= (((int16_t)(RKEM_Q / 2 - t)) >> 15) & RKEM_Q;
             r->coeffs[8 * i + j] = t;
         }
     }

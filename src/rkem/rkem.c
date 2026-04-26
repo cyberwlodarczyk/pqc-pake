@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <openssl/crypto.h>
 #include <kyber/symmetric.h>
 #include "poly.h"
@@ -161,6 +160,34 @@ void RKEM_keypair(uint8_t *pk, uint8_t *sk)
     OPENSSL_cleanse(&e, sizeof(polyvec));
 }
 
+void RKEM_rand(uint8_t *rand_pk, const uint8_t *seed, const uint8_t *pk)
+{
+    polyvec s, e, p, p1, p2;
+    polyvec_frombytes(&p1, pk);
+    uint8_t nonce = 0;
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&s.vec[i], seed, nonce++);
+    }
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&e.vec[i], seed, nonce++);
+    }
+    polyvec_ntt(&s);
+    polyvec_ntt(&e);
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        polyvec_basemul_acc_montgomery(&p2.vec[i], &RKEM_A[i], &s);
+        poly_tomont(&p2.vec[i]);
+    }
+    polyvec_add(&p2, &p2, &e);
+    polyvec_add(&p, &p1, &p2);
+    polyvec_reduce(&p);
+    polyvec_tobytes(rand_pk, &p);
+    OPENSSL_cleanse(&s, sizeof(polyvec));
+    OPENSSL_cleanse(&e, sizeof(polyvec));
+}
+
 void RKEM_encaps(uint8_t *ct, uint8_t *ss, const uint8_t *pk)
 {
     polyvec r, e1, p, u;
@@ -176,7 +203,7 @@ void RKEM_encaps(uint8_t *ct, uint8_t *ss, const uint8_t *pk)
     {
         poly_getnoise_eta2(&e1.vec[i], noiseseed, nonce++);
     }
-    poly_getnoise_eta3(&e2, noiseseed, nonce++);
+    poly_getnoise_eta3(&e2, noiseseed, nonce);
     randombytes(ss, RKEM_MSGBYTES);
     poly_frommsg(&k, ss);
     polyvec_ntt(&r);
@@ -202,7 +229,10 @@ void RKEM_encaps(uint8_t *ct, uint8_t *ss, const uint8_t *pk)
     OPENSSL_cleanse(&k, sizeof(poly));
 }
 
-void RKEM_decaps(uint8_t *ss, const uint8_t *ct, const uint8_t *sk)
+void RKEM_decaps_derand(
+    uint8_t *ss,
+    const uint8_t *ct,
+    const uint8_t *sk)
 {
     polyvec u, s;
     poly v, z;
@@ -217,4 +247,27 @@ void RKEM_decaps(uint8_t *ss, const uint8_t *ct, const uint8_t *sk)
     poly_tomsg(ss, &z);
     OPENSSL_cleanse(&s, sizeof(polyvec));
     OPENSSL_cleanse(&z, sizeof(poly));
+}
+
+void RKEM_decaps(
+    uint8_t *ss,
+    const uint8_t *ct,
+    const uint8_t *sk,
+    const uint8_t *seed)
+{
+    polyvec s, s1, s2;
+    polyvec_frombytes(&s1, sk);
+    uint8_t nonce = 0;
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&s2.vec[i], seed, nonce++);
+    }
+    polyvec_ntt(&s2);
+    polyvec_add(&s, &s1, &s2);
+    polyvec_reduce(&s);
+    uint8_t rand_sk[RKEM_SECRETKEYBYTES];
+    polyvec_tobytes(rand_sk, &s);
+    RKEM_decaps_derand(ss, ct, rand_sk);
+    OPENSSL_cleanse(&s1, sizeof(polyvec));
+    OPENSSL_cleanse(&s2, sizeof(polyvec));
 }
