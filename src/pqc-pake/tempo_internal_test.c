@@ -29,7 +29,7 @@ int test_fls()
     polyvec a1[KYBER_K];
     gen_matrix(a1, seed, 0);
     polyvec a2;
-    fls(&a2, seed);
+    tempo_fls(&a2, seed);
     return polyvec_compare(a1, &a2);
 }
 

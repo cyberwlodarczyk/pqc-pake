@@ -1,4 +1,5 @@
 #include <openssl/crypto.h>
+#include <openssl/rand.h>
 #include <kyber/symmetric.h>
 #include "rkem_internal.h"
 
@@ -56,72 +57,265 @@ const polyvec RKEM_AT[RKEM_K] = {
       {{4935, 1915, 779, 1933, 5261, 6459, 7560, 3331, 3802, 3395, 2975, 2101, 715, 7650, 2156, 1216, 7092, 2889, 6240, 7547, 1519, 935, 3802, 3133, 916, 1416, 3177, 6243, 6356, 2404, 4859, 3007, 3570, 2303, 548, 681, 4390, 3635, 2416, 2531, 5866, 1635, 2783, 3464, 3492, 2267, 6796, 1007, 811, 3179, 5651, 2928, 5216, 2349, 4146, 5993, 4713, 6662, 3716, 5836, 4773, 4594, 601, 4361, 1739, 3349, 1002, 7240, 4456, 1744, 2064, 4119, 4051, 293, 2507, 1433, 3614, 6617, 4688, 5720, 7183, 427, 6157, 5435, 865, 573, 7531, 6555, 5664, 4584, 6698, 7616, 3566, 1777, 5329, 2675, 397, 4534, 5730, 4032, 5731, 4329, 2330, 2060, 3469, 1375, 2716, 5687, 2071, 6535, 551, 2791, 4902, 5617, 327, 4621, 3826, 1748, 1959, 4260, 3612, 6584, 7594, 404, 551, 2865, 2563, 4234}},
       {{2284, 3056, 238, 5303, 5979, 6571, 6340, 1267, 135, 371, 119, 147, 766, 5764, 6570, 2831, 4517, 3624, 4214, 6539, 3851, 7306, 2614, 3697, 5970, 17, 2368, 677, 3307, 2957, 5033, 7633, 614, 2073, 6663, 913, 663, 7127, 4187, 3760, 3489, 7358, 3639, 1280, 7601, 3340, 5872, 6272, 3375, 4614, 6507, 2183, 1427, 6314, 7172, 6930, 2533, 5951, 3722, 3282, 2206, 216, 4604, 4240, 1944, 3019, 932, 4403, 854, 2504, 852, 1204, 4217, 7325, 6854, 7078, 4624, 2146, 2888, 692, 6009, 2644, 4354, 5708, 2922, 4890, 7326, 3802, 4873, 5406, 2780, 6291, 3185, 4922, 7037, 2783, 693, 6294, 4207, 515, 7204, 7454, 3345, 2622, 921, 2387, 1227, 6819, 830, 3908, 5586, 1499, 4299, 3761, 7489, 6717, 5416, 4830, 6850, 2079, 827, 7128, 3113, 3748, 39, 6504, 2348, 4938}}}}};
 
-void fls(polyvec *a, const uint8_t *seed, int transposed)
+void rkem_fls(polyvec *a, const uint8_t *seed, int transposed)
 {
-  xof_state state;
-  uint8_t buf[3 * XOF_BLOCKBYTES];
-  for (uint8_t y = 0; y < RKEM_K; y++)
-  {
-    for (uint8_t x = 0; x < RKEM_K; x++)
+    xof_state state;
+    uint8_t buf[3 * XOF_BLOCKBYTES];
+    for (uint8_t y = 0; y < RKEM_K; y++)
     {
-      if (transposed)
-      {
-        xof_absorb(&state, seed, y, x);
-      }
-      else
-      {
-        xof_absorb(&state, seed, x, y);
-      }
-      xof_squeezeblocks(buf, 3, &state);
-      int ctr = 0;
-      for (int i = 0, buf_i = 0; i <= 34; i++, buf_i += 13)
-      {
-        uint16_t d[8];
-        d[0] = (buf[buf_i] |
-                ((uint16_t)buf[buf_i + 1] << 8)) &
-               0x1fff;
-        d[1] = ((buf[buf_i + 1] >> 5) |
-                ((uint16_t)buf[buf_i + 2] << 3) |
-                ((uint16_t)buf[buf_i + 3] << 11)) &
-               0x1fff;
-        d[2] = ((buf[buf_i + 3] >> 2) |
-                ((uint16_t)buf[buf_i + 4] << 6)) &
-               0x1fff;
-        d[3] = ((buf[buf_i + 4] >> 7) |
-                ((uint16_t)buf[buf_i + 5] << 1) |
-                ((uint16_t)buf[buf_i + 6] << 9)) &
-               0x1fff;
-        d[4] = ((buf[buf_i + 6] >> 4) |
-                ((uint16_t)buf[buf_i + 7] << 4) |
-                ((uint16_t)buf[buf_i + 8] << 12)) &
-               0x1fff;
-        d[5] = ((buf[buf_i + 8] >> 1) |
-                ((uint16_t)buf[buf_i + 9] << 7)) &
-               0x1fff;
-        d[6] = ((buf[buf_i + 9] >> 6) |
-                ((uint16_t)buf[buf_i + 10] << 2) |
-                ((uint16_t)buf[buf_i + 11] << 10)) &
-               0x1fff;
-        d[7] = ((buf[buf_i + 11] >> 3) |
-                ((uint16_t)buf[buf_i + 12] << 5)) &
-               0x1fff;
-        for (int d_i = 0; d_i < 8; d_i++)
+        for (uint8_t x = 0; x < RKEM_K; x++)
         {
-          int acceptable = (d[d_i] < RKEM_Q);
-          int flag = 0;
-          for (int j = 0; j < RKEM_N; j++)
-          {
-            int match = (j == ctr);
-            int mask = match * acceptable;
-            int16_t *coeffs = a[y].vec[x].coeffs;
-            coeffs[j] = coeffs[j] * (1 - mask) + d[d_i] * mask;
-            flag += mask;
-          }
-          ctr += flag;
+            if (transposed)
+            {
+                xof_absorb(&state, seed, y, x);
+            }
+            else
+            {
+                xof_absorb(&state, seed, x, y);
+            }
+            xof_squeezeblocks(buf, 3, &state);
+            int ctr = 0;
+            for (int i = 0, buf_i = 0; i <= 34; i++, buf_i += 13)
+            {
+                uint16_t d[8];
+                d[0] = (buf[buf_i] |
+                        ((uint16_t)buf[buf_i + 1] << 8)) &
+                       0x1fff;
+                d[1] = ((buf[buf_i + 1] >> 5) |
+                        ((uint16_t)buf[buf_i + 2] << 3) |
+                        ((uint16_t)buf[buf_i + 3] << 11)) &
+                       0x1fff;
+                d[2] = ((buf[buf_i + 3] >> 2) |
+                        ((uint16_t)buf[buf_i + 4] << 6)) &
+                       0x1fff;
+                d[3] = ((buf[buf_i + 4] >> 7) |
+                        ((uint16_t)buf[buf_i + 5] << 1) |
+                        ((uint16_t)buf[buf_i + 6] << 9)) &
+                       0x1fff;
+                d[4] = ((buf[buf_i + 6] >> 4) |
+                        ((uint16_t)buf[buf_i + 7] << 4) |
+                        ((uint16_t)buf[buf_i + 8] << 12)) &
+                       0x1fff;
+                d[5] = ((buf[buf_i + 8] >> 1) |
+                        ((uint16_t)buf[buf_i + 9] << 7)) &
+                       0x1fff;
+                d[6] = ((buf[buf_i + 9] >> 6) |
+                        ((uint16_t)buf[buf_i + 10] << 2) |
+                        ((uint16_t)buf[buf_i + 11] << 10)) &
+                       0x1fff;
+                d[7] = ((buf[buf_i + 11] >> 3) |
+                        ((uint16_t)buf[buf_i + 12] << 5)) &
+                       0x1fff;
+                for (int d_i = 0; d_i < 8; d_i++)
+                {
+                    int acceptable = (d[d_i] < RKEM_Q);
+                    int flag = 0;
+                    for (int j = 0; j < RKEM_N; j++)
+                    {
+                        int match = (j == ctr);
+                        int mask = match * acceptable;
+                        int16_t *coeffs = a[y].vec[x].coeffs;
+                        coeffs[j] = coeffs[j] * (1 - mask) + d[d_i] * mask;
+                        flag += mask;
+                    }
+                    ctr += flag;
+                }
+            }
         }
-      }
     }
-  }
-  OPENSSL_cleanse(&state, sizeof(xof_state));
-  OPENSSL_cleanse(buf, 3 * XOF_BLOCKBYTES);
+    OPENSSL_cleanse(&state, sizeof(xof_state));
+    OPENSSL_cleanse(buf, 3 * XOF_BLOCKBYTES);
+}
+
+void rkem_keygen(uint8_t *public_key, uint8_t *secret_key, const polyvec *a)
+{
+    polyvec s, e, p;
+    uint8_t noiseseed[RKEM_SYMBYTES];
+    RAND_bytes(noiseseed, RKEM_SYMBYTES);
+    uint8_t nonce = 0;
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&s.vec[i], noiseseed, nonce++);
+    }
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&e.vec[i], noiseseed, nonce++);
+    }
+    polyvec_ntt(&s);
+    polyvec_ntt(&e);
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        polyvec_basemul_acc_montgomery(&p.vec[i], &a[i], &s);
+        poly_tomont(&p.vec[i]);
+    }
+    polyvec_add(&p, &p, &e);
+    polyvec_reduce(&p);
+    polyvec_tobytes(public_key, &p);
+    polyvec_tobytes(secret_key, &s);
+    OPENSSL_cleanse(noiseseed, RKEM_SYMBYTES);
+    OPENSSL_cleanse(&s, sizeof(polyvec));
+    OPENSSL_cleanse(&e, sizeof(polyvec));
+}
+
+void rkem_rand(
+    uint8_t *rand_public_key,
+    const uint8_t *seed,
+    const uint8_t *public_key,
+    const polyvec *a)
+{
+    polyvec s, e, p, p1, p2;
+    polyvec_frombytes(&p1, public_key);
+    uint8_t nonce = 0;
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&s.vec[i], seed, nonce++);
+    }
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&e.vec[i], seed, nonce++);
+    }
+    polyvec_ntt(&s);
+    polyvec_ntt(&e);
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        polyvec_basemul_acc_montgomery(&p2.vec[i], &a[i], &s);
+        poly_tomont(&p2.vec[i]);
+    }
+    polyvec_add(&p2, &p2, &e);
+    polyvec_add(&p, &p1, &p2);
+    polyvec_reduce(&p);
+    polyvec_tobytes(rand_public_key, &p);
+    OPENSSL_cleanse(&s, sizeof(polyvec));
+    OPENSSL_cleanse(&e, sizeof(polyvec));
+}
+
+void rkem_derand(
+    uint8_t *public_key,
+    const uint8_t *seed,
+    const uint8_t *rand_public_key,
+    const polyvec *a)
+{
+    polyvec s, e, p, p1, p2;
+    polyvec_frombytes(&p1, rand_public_key);
+    uint8_t nonce = 0;
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&s.vec[i], seed, nonce++);
+    }
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&e.vec[i], seed, nonce++);
+    }
+    polyvec_ntt(&s);
+    polyvec_ntt(&e);
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        polyvec_basemul_acc_montgomery(&p2.vec[i], &a[i], &s);
+        poly_tomont(&p2.vec[i]);
+    }
+    polyvec_add(&p2, &p2, &e);
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_sub(&p.vec[i], &p1.vec[i], &p2.vec[i]);
+    }
+    polyvec_reduce(&p);
+    polyvec_tobytes(public_key, &p);
+    OPENSSL_cleanse(&s, sizeof(polyvec));
+    OPENSSL_cleanse(&e, sizeof(polyvec));
+}
+
+void rkem_encaps(
+    uint8_t *ciphertext,
+    uint8_t *shared_secret,
+    const uint8_t *public_key,
+    const polyvec *at)
+{
+    polyvec r, e1, p, u;
+    poly e2, v, k;
+    uint8_t noiseseed[RKEM_SYMBYTES];
+    RAND_bytes(noiseseed, RKEM_SYMBYTES);
+    uint8_t nonce = 0;
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta2(&r.vec[i], noiseseed, nonce++);
+    }
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta2(&e1.vec[i], noiseseed, nonce++);
+    }
+    poly_getnoise_eta3(&e2, noiseseed, nonce);
+    RAND_bytes(shared_secret, RKEM_MSGBYTES);
+    poly_frommsg(&k, shared_secret);
+    polyvec_ntt(&r);
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        polyvec_basemul_acc_montgomery(&u.vec[i], &at[i], &r);
+    }
+    polyvec_invntt_tomont(&u);
+    polyvec_add(&u, &u, &e1);
+    polyvec_reduce(&u);
+    polyvec_frombytes(&p, public_key);
+    polyvec_basemul_acc_montgomery(&v, &p, &r);
+    poly_invntt_tomont(&v);
+    poly_add(&v, &v, &e2);
+    poly_add(&v, &v, &k);
+    poly_reduce(&v);
+    polyvec_compress(ciphertext, &u);
+    poly_compress(ciphertext + RKEM_POLYVECCOMPRESSEDBYTES, &v);
+    OPENSSL_cleanse(noiseseed, RKEM_SYMBYTES);
+    OPENSSL_cleanse(&r, sizeof(polyvec));
+    OPENSSL_cleanse(&e1, sizeof(polyvec));
+    OPENSSL_cleanse(&e2, sizeof(poly));
+    OPENSSL_cleanse(&k, sizeof(poly));
+}
+
+void rkem_decaps_derand_polyvec(
+    uint8_t *shared_secret,
+    const uint8_t *ciphertext,
+    const polyvec *secret_key)
+{
+    polyvec u;
+    poly v, z;
+    polyvec_decompress(&u, ciphertext);
+    poly_decompress(&v, ciphertext + RKEM_POLYVECCOMPRESSEDBYTES);
+    polyvec_ntt(&u);
+    polyvec_basemul_acc_montgomery(&z, secret_key, &u);
+    poly_invntt_tomont(&z);
+    poly_sub(&z, &v, &z);
+    poly_reduce(&z);
+    poly_tomsg(shared_secret, &z);
+    OPENSSL_cleanse(&z, sizeof(poly));
+}
+
+void rkem_decaps_derand(
+    uint8_t *shared_secret,
+    const uint8_t *ciphertext,
+    const uint8_t *secret_key)
+{
+    polyvec s;
+    polyvec_frombytes(&s, secret_key);
+    rkem_decaps_derand_polyvec(shared_secret, ciphertext, &s);
+    OPENSSL_cleanse(&s, sizeof(polyvec));
+}
+
+void rkem_decaps(
+    uint8_t *shared_secret,
+    const uint8_t *ciphertext,
+    const uint8_t *secret_key,
+    const uint8_t *seed)
+{
+    polyvec s, s1, s2;
+    polyvec_frombytes(&s1, secret_key);
+    uint8_t nonce = 0;
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        poly_getnoise_eta1(&s2.vec[i], seed, nonce++);
+    }
+    polyvec_ntt(&s2);
+    polyvec_add(&s, &s1, &s2);
+    polyvec_reduce(&s);
+    rkem_decaps_derand_polyvec(shared_secret, ciphertext, &s);
+    OPENSSL_cleanse(&s, sizeof(polyvec));
+    OPENSSL_cleanse(&s1, sizeof(polyvec));
+    OPENSSL_cleanse(&s2, sizeof(polyvec));
 }

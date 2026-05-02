@@ -1,6 +1,8 @@
 add_library(pqc-pake STATIC
+    nice_pake_re.c
     nice_pake.c
     tempo_internal.c
+    tempo_re.c
     tempo.c
 )
 
@@ -18,6 +20,6 @@ install(TARGETS pqc-pake
 )
 
 install(FILES
-    nice_pake.h tempo.h
+    nice_pake_re.h nice_pake.h tempo_re.h tempo.h
     DESTINATION include/pqc-pake
 )

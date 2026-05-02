@@ -1,9 +1,8 @@
 #include <openssl/crypto.h>
 #include <kyber/symmetric.h>
-#include <kyber/poly.h>
 #include "tempo_internal.h"
 
-void fls(polyvec *v, const uint8_t *seed)
+void tempo_fls(polyvec *v, const uint8_t *seed)
 {
     xof_state state;
     uint8_t buf[5 * XOF_BLOCKBYTES];
@@ -41,69 +40,4 @@ void fls(polyvec *v, const uint8_t *seed)
     }
     OPENSSL_cleanse(&state, sizeof(xof_state));
     OPENSSL_cleanse(buf, 5 * XOF_BLOCKBYTES);
-}
-
-void hash_1(
-    polyvec *r,
-    const TEMPO_session sess,
-    const uint8_t *seed,
-    const uint8_t *r_seed)
-{
-    keccak_state state;
-    shake256_init(&state);
-    shake256_absorb(&state, (uint8_t *)&sess.fsid, LEN_FSID);
-    shake256_absorb(&state, sess.password, KYBER_SYMBYTES);
-    shake256_absorb(&state, seed, KYBER_SYMBYTES);
-    shake256_absorb(&state, r_seed, LEN_3LAMBDA);
-    uint8_t hash[KYBER_SYMBYTES];
-    shake256_squeeze(hash, KYBER_SYMBYTES, &state);
-    fls(r, hash);
-    OPENSSL_cleanse(&state, sizeof(keccak_state));
-    OPENSSL_cleanse(hash, KYBER_SYMBYTES);
-}
-
-void hash_2(
-    uint8_t *v_hash,
-    const TEMPO_session sess,
-    const uint8_t *seed,
-    const uint8_t *v_buf)
-{
-    keccak_state state;
-    shake256_init(&state);
-    shake256_absorb(&state, (uint8_t *)&sess.fsid, LEN_FSID);
-    shake256_absorb(&state, sess.password, KYBER_SYMBYTES);
-    shake256_absorb(&state, seed, KYBER_SYMBYTES);
-    shake256_absorb(&state, v_buf, KYBER_POLYVECBYTES);
-    shake256_squeeze(v_hash, LEN_3LAMBDA, &state);
-    OPENSSL_cleanse(&state, sizeof(keccak_state));
-}
-
-void hash_key(
-    uint8_t *tag,
-    uint8_t *shared_secret,
-    const TEMPO_session sess,
-    const uint8_t *public_key,
-    const TEMPO_apk *apk,
-    const uint8_t *ciphertext,
-    const uint8_t *key)
-{
-    keccak_state state;
-    shake256_init(&state);
-    shake256_absorb(&state, (uint8_t *)&sess.fsid, LEN_FSID);
-    shake256_absorb(&state, sess.password, KYBER_SYMBYTES);
-    shake256_absorb(&state, public_key, KYBER_PUBLICKEYBYTES);
-    shake256_absorb(&state, (uint8_t *)apk, LEN_APK);
-    shake256_absorb(&state, ciphertext, KYBER_CIPHERTEXTBYTES);
-    shake256_absorb(&state, key, KYBER_SSBYTES);
-    shake256_squeeze(tag, LEN_TAG, &state);
-    shake256_squeeze(shared_secret, LEN_LAMBDA, &state);
-    OPENSSL_cleanse(&state, sizeof(keccak_state));
-}
-
-void polyvec_sub(polyvec *r, const polyvec *a, const polyvec *b)
-{
-    for (int i = 0; i < KYBER_K; i++)
-    {
-        poly_sub(&r->vec[i], &a->vec[i], &b->vec[i]);
-    }
 }

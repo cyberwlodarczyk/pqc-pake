@@ -13,7 +13,7 @@ void NICE_PAKE_keygen(
     pqcrystals_kyber768_ref_keypair(public_key, secret_key);
     memcpy(seed, public_key + KYBER_POLYVECBYTES, KYBER_SYMBYTES);
     memcpy(poly, public_key, KYBER_POLYVECBYTES);
-    for (size_t i = 0; i < KYBER_SYMBYTES; i++)
+    for (int i = 0; i < KYBER_SYMBYTES; i++)
     {
         seed[i] ^= password[i];
     }
@@ -29,7 +29,7 @@ void NICE_PAKE_encaps(
 {
     uint8_t seed_copy[KYBER_SYMBYTES];
     memcpy(seed_copy, seed, KYBER_SYMBYTES);
-    for (size_t i = 0; i < KYBER_SYMBYTES; i++)
+    for (int i = 0; i < KYBER_SYMBYTES; i++)
     {
         seed_copy[i] ^= password[i];
     }

@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define TEMPO_len_lambda 24
+#define TEMPO_len_3lambda (3 * TEMPO_len_lambda)
 #define TEMPO_len_password 32
 #define TEMPO_len_seed 32
 #define TEMPO_len_poly 1152
@@ -15,7 +16,7 @@
 
 typedef struct
 {
-    uint8_t u[3 * TEMPO_len_lambda];
+    uint8_t u[TEMPO_len_3lambda];
     uint8_t v[TEMPO_len_poly];
     uint8_t seed[TEMPO_len_seed];
 } TEMPO_apk;

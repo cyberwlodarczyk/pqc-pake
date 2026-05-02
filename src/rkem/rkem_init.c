@@ -55,10 +55,10 @@ int main()
     polyvec A[RKEM_K], AT[RKEM_K];
     uint8_t seed[RKEM_SYMBYTES];
     RAND_bytes(seed, RKEM_SYMBYTES);
-    fls(A, seed, 0);
+    rkem_fls(A, seed, 0);
     printf("A\n\n");
     print(A);
-    fls(AT, seed, 1);
+    rkem_fls(AT, seed, 1);
     printf("\n\nAT\n\n");
     print(AT);
     return EXIT_SUCCESS;

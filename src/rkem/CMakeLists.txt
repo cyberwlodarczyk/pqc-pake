@@ -6,6 +6,7 @@ add_library(rkem STATIC
     reduce.c
     rkem_internal.c
     rkem.c
+    xrkem.c
 )
 
 target_link_libraries(rkem PUBLIC kyber)
@@ -22,6 +23,6 @@ install(TARGETS rkem
 )
 
 install(FILES
-    rkem.h
+    rkem.h xrkem.h
     DESTINATION include/rkem
 )
