@@ -6,5 +6,5 @@ set(CMAKE_INSTALL_PREFIX $ENV{PQC_PAKE_DIR})
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(kyber)
-add_subdirectory(pqc-pake)
 add_subdirectory(rkem)
+add_subdirectory(pqc-pake)

@@ -1,6 +1,8 @@
+// gcc -o ntt_init ntt_init.c reduce.c
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <rkem/reduce.h>
+#include "reduce.h"
 
 #define RKEM_ROOT_OF_UNITY 202
 

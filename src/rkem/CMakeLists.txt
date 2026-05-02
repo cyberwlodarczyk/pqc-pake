@@ -1,12 +1,14 @@
-add_library(rkem SHARED
+add_library(rkem STATIC
     cbd.c
     ntt.c
     poly.c
     polyvec.c
-    randombytes.c
-    rkem.c
     reduce.c
+    rkem_internal.c
+    rkem.c
 )
+
+target_link_libraries(rkem PUBLIC kyber)
 
 target_include_directories(rkem
     PUBLIC
@@ -20,7 +22,6 @@ install(TARGETS rkem
 )
 
 install(FILES
-    cbd.h ntt.h params.h poly.h polyvec.h
-    randombytes.h reduce.h rkem.h
+    rkem.h
     DESTINATION include/rkem
 )

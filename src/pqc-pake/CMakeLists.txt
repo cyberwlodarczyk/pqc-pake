@@ -1,9 +1,6 @@
-add_library(pqc-pake SHARED
-    kem.c
-    nice_re.c
-    nice.c
-    rkem.c
-    tempo_re.c
+add_library(pqc-pake STATIC
+    nice_pake.c
+    tempo_internal.c
     tempo.c
 )
 
@@ -21,6 +18,6 @@ install(TARGETS pqc-pake
 )
 
 install(FILES
-    kem.h nice_re.h nice.h rkem.h tempo_re.h tempo.h
+    nice_pake.h tempo.h
     DESTINATION include/pqc-pake
 )
