@@ -6,7 +6,7 @@
 #include "tempo.h"
 #include "tempo_internal.h"
 
-void hash_1(
+void tempo_hash_1(
     polyvec *r,
     const TEMPO_session sess,
     const uint8_t *seed,
@@ -25,7 +25,7 @@ void hash_1(
     OPENSSL_cleanse(hash, KYBER_SYMBYTES);
 }
 
-void hash_2(
+void tempo_hash_2(
     uint8_t *v_hash,
     const TEMPO_session sess,
     const uint8_t *seed,
@@ -41,7 +41,7 @@ void hash_2(
     OPENSSL_cleanse(&state, sizeof(keccak_state));
 }
 
-void hash_key(
+void tempo_hash_key(
     uint8_t *tag,
     uint8_t *shared_secret,
     const TEMPO_session sess,
@@ -76,7 +76,7 @@ void TEMPO_keygen(
     uint8_t r_seed[TEMPO_len_3lambda];
     RAND_bytes(r_seed, TEMPO_len_3lambda);
     polyvec r;
-    hash_1(&r, sess, apk->seed, r_seed);
+    tempo_hash_1(&r, sess, apk->seed, r_seed);
     polyvec t;
     polyvec_frombytes(&t, poly);
     polyvec v;
@@ -84,7 +84,7 @@ void TEMPO_keygen(
     polyvec_reduce(&v);
     polyvec_tobytes(apk->v, &v);
     uint8_t v_hash[TEMPO_len_3lambda];
-    hash_2(v_hash, sess, apk->seed, apk->v);
+    tempo_hash_2(v_hash, sess, apk->seed, apk->v);
     for (int i = 0; i < TEMPO_len_3lambda; i++)
     {
         apk->u[i] = v_hash[i] ^ r_seed[i];
@@ -104,14 +104,14 @@ void TEMPO_encaps(
     const TEMPO_apk *apk)
 {
     uint8_t v_hash[TEMPO_len_3lambda];
-    hash_2(v_hash, sess, apk->seed, apk->v);
+    tempo_hash_2(v_hash, sess, apk->seed, apk->v);
     uint8_t r_seed[TEMPO_len_3lambda];
     for (int i = 0; i < TEMPO_len_3lambda; i++)
     {
         r_seed[i] = v_hash[i] ^ apk->u[i];
     }
     polyvec r;
-    hash_1(&r, sess, apk->seed, r_seed);
+    tempo_hash_1(&r, sess, apk->seed, r_seed);
     polyvec v;
     polyvec_frombytes(&v, apk->v);
     polyvec t;
@@ -127,7 +127,7 @@ void TEMPO_encaps(
     memcpy(public_key, poly, KYBER_POLYVECBYTES);
     uint8_t key[KYBER_SSBYTES];
     pqcrystals_kyber768_ref_enc(ciphertext, key, public_key);
-    hash_key(
+    tempo_hash_key(
         tag,
         shared_secret,
         sess,
@@ -157,7 +157,7 @@ void TEMPO_decaps(
     pqcrystals_kyber768_ref_dec(key, ciphertext, secret_key);
     uint8_t local_tag[TEMPO_len_tag];
     uint8_t real_shared_secret[TEMPO_len_lambda];
-    hash_key(
+    tempo_hash_key(
         local_tag,
         real_shared_secret,
         sess,

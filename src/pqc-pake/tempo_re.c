@@ -6,7 +6,7 @@
 #include "tempo_re.h"
 #include "tempo_internal.h"
 
-void hash(
+void tempo_re_hash(
     uint8_t *v_hash,
     const TEMPO_RE_session sess,
     const uint8_t *seed,
@@ -22,7 +22,7 @@ void hash(
     OPENSSL_cleanse(&state, sizeof(keccak_state));
 }
 
-void hash_key(
+void tempo_re_hash_key(
     uint8_t *tag,
     uint8_t *shared_secret,
     const TEMPO_RE_session sess,
@@ -58,7 +58,7 @@ void TEMPO_RE_keygen(
     XRKEM_rand(rand_public_key, r_seed, public_key);
     memcpy(apk->v, rand_public_key, XRKEM_len_poly);
     uint8_t v_hash[TEMPO_RE_len_3lambda];
-    hash(v_hash, sess, apk->seed, apk->v);
+    tempo_re_hash(v_hash, sess, apk->seed, apk->v);
     for (int i = 0; i < TEMPO_RE_len_3lambda; i++)
     {
         apk->u[i] = v_hash[i] ^ r_seed[i];
@@ -76,7 +76,7 @@ void TEMPO_RE_encaps(
     const TEMPO_RE_apk *apk)
 {
     uint8_t v_hash[TEMPO_RE_len_3lambda];
-    hash(v_hash, sess, apk->seed, apk->v);
+    tempo_re_hash(v_hash, sess, apk->seed, apk->v);
     uint8_t r_seed[TEMPO_RE_len_3lambda];
     for (int i = 0; i < TEMPO_RE_len_3lambda; i++)
     {
@@ -89,7 +89,7 @@ void TEMPO_RE_encaps(
     XRKEM_derand(public_key, r_seed, rand_public_key);
     uint8_t key[XRKEM_len_shared_secret];
     XRKEM_encaps(ciphertext, key, public_key);
-    hash_key(
+    tempo_re_hash_key(
         tag,
         shared_secret,
         sess,
@@ -117,7 +117,7 @@ void TEMPO_RE_decaps(
     XRKEM_decaps_derand(key, ciphertext, secret_key);
     uint8_t local_tag[TEMPO_RE_len_tag];
     uint8_t real_shared_secret[TEMPO_RE_len_shared_secret];
-    hash_key(
+    tempo_re_hash_key(
         local_tag,
         real_shared_secret,
         sess,
