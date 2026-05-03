@@ -1,36 +1,50 @@
-#ifndef POLYVEC_H
-#define POLYVEC_H
+#ifndef KYBER_POLYVEC_H
+#define KYBER_POLYVEC_H
 
 #include <stdint.h>
 #include "params.h"
 #include "poly.h"
 
-typedef struct{
-  poly vec[KYBER_K];
-} polyvec;
+typedef struct
+{
+    KYBER_poly vec[KYBER_K];
+} KYBER_polyvec;
 
-#define polyvec_compress KYBER_NAMESPACE(polyvec_compress)
-void polyvec_compress(uint8_t r[KYBER_POLYVECCOMPRESSEDBYTES], const polyvec *a);
-#define polyvec_decompress KYBER_NAMESPACE(polyvec_decompress)
-void polyvec_decompress(polyvec *r, const uint8_t a[KYBER_POLYVECCOMPRESSEDBYTES]);
+void KYBER_polyvec_compress(
+    uint8_t r[KYBER_LEN_POLYVEC_COMPRESSED],
+    const KYBER_polyvec *a);
 
-#define polyvec_tobytes KYBER_NAMESPACE(polyvec_tobytes)
-void polyvec_tobytes(uint8_t r[KYBER_POLYVECBYTES], const polyvec *a);
-#define polyvec_frombytes KYBER_NAMESPACE(polyvec_frombytes)
-void polyvec_frombytes(polyvec *r, const uint8_t a[KYBER_POLYVECBYTES]);
+void KYBER_polyvec_decompress(
+    KYBER_polyvec *r,
+    const uint8_t a[KYBER_LEN_POLYVEC_COMPRESSED]);
 
-#define polyvec_ntt KYBER_NAMESPACE(polyvec_ntt)
-void polyvec_ntt(polyvec *r);
-#define polyvec_invntt_tomont KYBER_NAMESPACE(polyvec_invntt_tomont)
-void polyvec_invntt_tomont(polyvec *r);
+void KYBER_polyvec_tobytes(
+    uint8_t r[KYBER_LEN_POLYVEC],
+    const KYBER_polyvec *a);
 
-#define polyvec_basemul_acc_montgomery KYBER_NAMESPACE(polyvec_basemul_acc_montgomery)
-void polyvec_basemul_acc_montgomery(poly *r, const polyvec *a, const polyvec *b);
+void KYBER_polyvec_frombytes(
+    KYBER_polyvec *r,
+    const uint8_t a[KYBER_LEN_POLYVEC]);
 
-#define polyvec_reduce KYBER_NAMESPACE(polyvec_reduce)
-void polyvec_reduce(polyvec *r);
+void KYBER_polyvec_ntt(KYBER_polyvec *r);
 
-#define polyvec_add KYBER_NAMESPACE(polyvec_add)
-void polyvec_add(polyvec *r, const polyvec *a, const polyvec *b);
+void KYBER_polyvec_invntt_tomont(KYBER_polyvec *r);
+
+void KYBER_polyvec_basemul_acc_montgomery(
+    KYBER_poly *r,
+    const KYBER_polyvec *a,
+    const KYBER_polyvec *b);
+
+void KYBER_polyvec_reduce(KYBER_polyvec *r);
+
+void KYBER_polyvec_add(
+    KYBER_polyvec *r,
+    const KYBER_polyvec *a,
+    const KYBER_polyvec *b);
+
+void KYBER_polyvec_sub(
+    KYBER_polyvec *r,
+    const KYBER_polyvec *a,
+    const KYBER_polyvec *b);
 
 #endif

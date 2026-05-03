@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 
-#define NICE_PAKE_RE_len_seed 32
-#define NICE_PAKE_RE_len_password (2 * NICE_PAKE_RE_len_seed)
-#define NICE_PAKE_RE_len_poly 1040
-#define NICE_PAKE_RE_len_secret_key NICE_PAKE_RE_len_poly
-#define NICE_PAKE_RE_len_ciphertext 848
-#define NICE_PAKE_RE_len_shared_secret 16
+#define NICE_PAKE_RE_LEN_SEED 32
+#define NICE_PAKE_RE_LEN_PASSWORD (2 * NICE_PAKE_RE_LEN_SEED)
+#define NICE_PAKE_RE_LEN_POLY 1040
+#define NICE_PAKE_RE_LEN_SECRET_KEY NICE_PAKE_RE_LEN_POLY
+#define NICE_PAKE_RE_LEN_CIPHERTEXT 848
+#define NICE_PAKE_RE_LEN_SHARED_SECRET 16
 
 void NICE_PAKE_RE_keygen(
     uint8_t *seed_a,

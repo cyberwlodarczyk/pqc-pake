@@ -1,12 +1,5 @@
 add_library(rkem STATIC
-    cbd.c
-    ntt.c
-    poly.c
-    polyvec.c
-    reduce.c
-    rkem_internal.c
-    rkem.c
-    xrkem.c
+    cbd.c ntt.c poly.c polyvec.c reduce.c rkem.c xrkem.c
 )
 
 target_link_libraries(rkem PUBLIC kyber)
@@ -23,6 +16,6 @@ install(TARGETS rkem
 )
 
 install(FILES
-    rkem.h xrkem.h
+    cbd.h ntt.h params.h poly.h polyvec.h reduce.h rkem.h xrkem.h
     DESTINATION include/rkem
 )

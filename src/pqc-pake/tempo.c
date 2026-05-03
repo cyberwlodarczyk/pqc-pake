@@ -1,13 +1,53 @@
 #include <string.h>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
-#include <kyber/kem.h>
+#include <kyber/kyber.h>
+#include <kyber/polyvec.h>
 #include <kyber/symmetric.h>
 #include "tempo.h"
-#include "tempo_internal.h"
 
-void tempo_hash_1(
-    polyvec *r,
+void TEMPO_fls(KYBER_polyvec *v, const uint8_t *seed)
+{
+    xof_state state;
+    uint8_t buf[5 * XOF_BLOCKBYTES];
+    for (uint8_t x = 0; x < KYBER_K; x++)
+    {
+        KYBER_xof_absorb(&state, seed, x, 0);
+        KYBER_xof_squeezeblocks(buf, 5, &state);
+        int ctr = 0;
+        for (int i = 0, buf_i = 0; i <= 279; i++, buf_i += 3)
+        {
+            uint16_t d[2];
+            int d_ok[2];
+            d[0] = ((buf[buf_i + 0] >> 0) |
+                    ((uint16_t)buf[buf_i + 1] << 8)) &
+                   0xFFF;
+            d[1] = ((buf[buf_i + 1] >> 4) |
+                    ((uint16_t)buf[buf_i + 2] << 4)) &
+                   0xFFF;
+            d_ok[0] = (d[0] < KYBER_Q);
+            d_ok[1] = (d[1] < KYBER_Q);
+            for (int d_i = 0; d_i < 2; d_i++)
+            {
+                int flag = 0;
+                for (int j = 0; j < KYBER_N; j++)
+                {
+                    int match = (j == ctr);
+                    int mask = match * d_ok[d_i];
+                    int16_t *coeffs = v->vec[x].coeffs;
+                    coeffs[j] = coeffs[j] * (1 - mask) + d[d_i] * mask;
+                    flag += mask;
+                }
+                ctr += flag;
+            }
+        }
+    }
+    OPENSSL_cleanse(&state, sizeof(xof_state));
+    OPENSSL_cleanse(buf, 5 * XOF_BLOCKBYTES);
+}
+
+static void hash_1(
+    KYBER_polyvec *r,
     const TEMPO_session sess,
     const uint8_t *seed,
     const uint8_t *r_seed)
@@ -15,17 +55,17 @@ void tempo_hash_1(
     keccak_state state;
     shake256_init(&state);
     shake256_absorb(&state, (uint8_t *)&sess.fsid, sizeof(TEMPO_fsid));
-    shake256_absorb(&state, sess.password, KYBER_SYMBYTES);
-    shake256_absorb(&state, seed, KYBER_SYMBYTES);
-    shake256_absorb(&state, r_seed, TEMPO_len_3lambda);
-    uint8_t hash[KYBER_SYMBYTES];
-    shake256_squeeze(hash, KYBER_SYMBYTES, &state);
-    tempo_fls(r, hash);
+    shake256_absorb(&state, sess.password, KYBER_LEN_SEED);
+    shake256_absorb(&state, seed, KYBER_LEN_SEED);
+    shake256_absorb(&state, r_seed, TEMPO_LEN_3LAMBDA);
+    uint8_t hash[KYBER_LEN_SEED];
+    shake256_squeeze(hash, KYBER_LEN_SEED, &state);
+    TEMPO_fls(r, hash);
     OPENSSL_cleanse(&state, sizeof(keccak_state));
-    OPENSSL_cleanse(hash, KYBER_SYMBYTES);
+    OPENSSL_cleanse(hash, KYBER_LEN_SEED);
 }
 
-void tempo_hash_2(
+static void hash_2(
     uint8_t *v_hash,
     const TEMPO_session sess,
     const uint8_t *seed,
@@ -34,14 +74,14 @@ void tempo_hash_2(
     keccak_state state;
     shake256_init(&state);
     shake256_absorb(&state, (uint8_t *)&sess.fsid, sizeof(TEMPO_fsid));
-    shake256_absorb(&state, sess.password, KYBER_SYMBYTES);
-    shake256_absorb(&state, seed, KYBER_SYMBYTES);
-    shake256_absorb(&state, v_buf, KYBER_POLYVECBYTES);
-    shake256_squeeze(v_hash, TEMPO_len_3lambda, &state);
+    shake256_absorb(&state, sess.password, KYBER_LEN_SEED);
+    shake256_absorb(&state, seed, KYBER_LEN_SEED);
+    shake256_absorb(&state, v_buf, KYBER_LEN_POLYVEC);
+    shake256_squeeze(v_hash, TEMPO_LEN_3LAMBDA, &state);
     OPENSSL_cleanse(&state, sizeof(keccak_state));
 }
 
-void tempo_hash_key(
+static void hash_key(
     uint8_t *tag,
     uint8_t *shared_secret,
     const TEMPO_session sess,
@@ -53,13 +93,13 @@ void tempo_hash_key(
     keccak_state state;
     shake256_init(&state);
     shake256_absorb(&state, (uint8_t *)&sess.fsid, sizeof(TEMPO_fsid));
-    shake256_absorb(&state, sess.password, KYBER_SYMBYTES);
-    shake256_absorb(&state, public_key, KYBER_PUBLICKEYBYTES);
+    shake256_absorb(&state, sess.password, KYBER_LEN_SEED);
+    shake256_absorb(&state, public_key, KYBER_LEN_PUBLIC_KEY);
     shake256_absorb(&state, (uint8_t *)apk, sizeof(TEMPO_apk));
-    shake256_absorb(&state, ciphertext, KYBER_CIPHERTEXTBYTES);
-    shake256_absorb(&state, key, KYBER_SSBYTES);
-    shake256_squeeze(tag, TEMPO_len_tag, &state);
-    shake256_squeeze(shared_secret, TEMPO_len_lambda, &state);
+    shake256_absorb(&state, ciphertext, KYBER_LEN_CIPHERTEXT);
+    shake256_absorb(&state, key, KYBER_LEN_SHARED_SECRET);
+    shake256_squeeze(tag, TEMPO_LEN_TAG, &state);
+    shake256_squeeze(shared_secret, TEMPO_LEN_LAMBDA, &state);
     OPENSSL_cleanse(&state, sizeof(keccak_state));
 }
 
@@ -69,31 +109,31 @@ void TEMPO_keygen(
     TEMPO_apk *apk,
     const TEMPO_session sess)
 {
-    pqcrystals_kyber768_ref_keypair(public_key, secret_key);
-    uint8_t poly[KYBER_POLYVECBYTES];
-    memcpy(apk->seed, public_key + KYBER_POLYVECBYTES, KYBER_SYMBYTES);
-    memcpy(poly, public_key, KYBER_POLYVECBYTES);
-    uint8_t r_seed[TEMPO_len_3lambda];
-    RAND_bytes(r_seed, TEMPO_len_3lambda);
-    polyvec r;
-    tempo_hash_1(&r, sess, apk->seed, r_seed);
-    polyvec t;
-    polyvec_frombytes(&t, poly);
-    polyvec v;
-    polyvec_add(&v, &t, &r);
-    polyvec_reduce(&v);
-    polyvec_tobytes(apk->v, &v);
-    uint8_t v_hash[TEMPO_len_3lambda];
-    tempo_hash_2(v_hash, sess, apk->seed, apk->v);
-    for (int i = 0; i < TEMPO_len_3lambda; i++)
+    KYBER_keygen(public_key, secret_key);
+    uint8_t poly[KYBER_LEN_POLYVEC];
+    memcpy(apk->seed, public_key + KYBER_LEN_POLYVEC, KYBER_LEN_SEED);
+    memcpy(poly, public_key, KYBER_LEN_POLYVEC);
+    uint8_t r_seed[TEMPO_LEN_3LAMBDA];
+    RAND_bytes(r_seed, TEMPO_LEN_3LAMBDA);
+    KYBER_polyvec r;
+    hash_1(&r, sess, apk->seed, r_seed);
+    KYBER_polyvec t;
+    KYBER_polyvec_frombytes(&t, poly);
+    KYBER_polyvec v;
+    KYBER_polyvec_add(&v, &t, &r);
+    KYBER_polyvec_reduce(&v);
+    KYBER_polyvec_tobytes(apk->v, &v);
+    uint8_t v_hash[TEMPO_LEN_3LAMBDA];
+    hash_2(v_hash, sess, apk->seed, apk->v);
+    for (int i = 0; i < TEMPO_LEN_3LAMBDA; i++)
     {
         apk->u[i] = v_hash[i] ^ r_seed[i];
     }
-    OPENSSL_cleanse(poly, KYBER_POLYVECBYTES);
-    OPENSSL_cleanse(&r, sizeof(polyvec));
-    OPENSSL_cleanse(&t, sizeof(polyvec));
-    OPENSSL_cleanse(r_seed, TEMPO_len_3lambda);
-    OPENSSL_cleanse(v_hash, TEMPO_len_3lambda);
+    OPENSSL_cleanse(poly, KYBER_LEN_POLYVEC);
+    OPENSSL_cleanse(&r, sizeof(KYBER_polyvec));
+    OPENSSL_cleanse(&t, sizeof(KYBER_polyvec));
+    OPENSSL_cleanse(r_seed, TEMPO_LEN_3LAMBDA);
+    OPENSSL_cleanse(v_hash, TEMPO_LEN_3LAMBDA);
 }
 
 void TEMPO_encaps(
@@ -103,31 +143,28 @@ void TEMPO_encaps(
     const TEMPO_session sess,
     const TEMPO_apk *apk)
 {
-    uint8_t v_hash[TEMPO_len_3lambda];
-    tempo_hash_2(v_hash, sess, apk->seed, apk->v);
-    uint8_t r_seed[TEMPO_len_3lambda];
-    for (int i = 0; i < TEMPO_len_3lambda; i++)
+    uint8_t v_hash[TEMPO_LEN_3LAMBDA];
+    hash_2(v_hash, sess, apk->seed, apk->v);
+    uint8_t r_seed[TEMPO_LEN_3LAMBDA];
+    for (int i = 0; i < TEMPO_LEN_3LAMBDA; i++)
     {
         r_seed[i] = v_hash[i] ^ apk->u[i];
     }
-    polyvec r;
-    tempo_hash_1(&r, sess, apk->seed, r_seed);
-    polyvec v;
-    polyvec_frombytes(&v, apk->v);
-    polyvec t;
-    for (int i = 0; i < KYBER_K; i++)
-    {
-        poly_sub(&t.vec[i], &v.vec[i], &r.vec[i]);
-    }
-    polyvec_reduce(&t);
-    uint8_t poly[KYBER_POLYVECBYTES];
-    polyvec_tobytes(poly, &t);
-    uint8_t public_key[KYBER_PUBLICKEYBYTES];
-    memcpy(public_key + KYBER_POLYVECBYTES, apk->seed, KYBER_SYMBYTES);
-    memcpy(public_key, poly, KYBER_POLYVECBYTES);
-    uint8_t key[KYBER_SSBYTES];
-    pqcrystals_kyber768_ref_enc(ciphertext, key, public_key);
-    tempo_hash_key(
+    KYBER_polyvec r;
+    hash_1(&r, sess, apk->seed, r_seed);
+    KYBER_polyvec v;
+    KYBER_polyvec_frombytes(&v, apk->v);
+    KYBER_polyvec t;
+    KYBER_polyvec_sub(&t, &v, &r);
+    KYBER_polyvec_reduce(&t);
+    uint8_t poly[KYBER_LEN_POLYVEC];
+    KYBER_polyvec_tobytes(poly, &t);
+    uint8_t public_key[KYBER_LEN_PUBLIC_KEY];
+    memcpy(public_key + KYBER_LEN_POLYVEC, apk->seed, KYBER_LEN_SEED);
+    memcpy(public_key, poly, KYBER_LEN_POLYVEC);
+    uint8_t key[KYBER_LEN_SHARED_SECRET];
+    KYBER_encaps(ciphertext, key, public_key);
+    hash_key(
         tag,
         shared_secret,
         sess,
@@ -135,13 +172,13 @@ void TEMPO_encaps(
         apk,
         ciphertext,
         key);
-    OPENSSL_cleanse(key, KYBER_SSBYTES);
-    OPENSSL_cleanse(public_key, KYBER_PUBLICKEYBYTES);
-    OPENSSL_cleanse(poly, KYBER_POLYVECBYTES);
-    OPENSSL_cleanse(&r, sizeof(polyvec));
-    OPENSSL_cleanse(&t, sizeof(polyvec));
-    OPENSSL_cleanse(v_hash, TEMPO_len_3lambda);
-    OPENSSL_cleanse(r_seed, TEMPO_len_3lambda);
+    OPENSSL_cleanse(key, KYBER_LEN_SHARED_SECRET);
+    OPENSSL_cleanse(public_key, KYBER_LEN_PUBLIC_KEY);
+    OPENSSL_cleanse(poly, KYBER_LEN_POLYVEC);
+    OPENSSL_cleanse(&r, sizeof(KYBER_polyvec));
+    OPENSSL_cleanse(&t, sizeof(KYBER_polyvec));
+    OPENSSL_cleanse(v_hash, TEMPO_LEN_3LAMBDA);
+    OPENSSL_cleanse(r_seed, TEMPO_LEN_3LAMBDA);
 }
 
 void TEMPO_decaps(
@@ -153,11 +190,11 @@ void TEMPO_decaps(
     const uint8_t *public_key,
     const uint8_t *secret_key)
 {
-    uint8_t key[KYBER_SSBYTES];
-    pqcrystals_kyber768_ref_dec(key, ciphertext, secret_key);
-    uint8_t local_tag[TEMPO_len_tag];
-    uint8_t real_shared_secret[TEMPO_len_lambda];
-    tempo_hash_key(
+    uint8_t key[KYBER_LEN_SHARED_SECRET];
+    KYBER_decaps(key, ciphertext, secret_key);
+    uint8_t local_tag[TEMPO_LEN_TAG];
+    uint8_t real_shared_secret[TEMPO_LEN_LAMBDA];
+    hash_key(
         local_tag,
         real_shared_secret,
         sess,
@@ -165,17 +202,17 @@ void TEMPO_decaps(
         apk,
         ciphertext,
         key);
-    uint8_t alt_shared_secret[TEMPO_len_lambda];
-    RAND_bytes(alt_shared_secret, TEMPO_len_lambda);
-    if (CRYPTO_memcmp(local_tag, tag, TEMPO_len_tag) != 0)
+    uint8_t alt_shared_secret[TEMPO_LEN_LAMBDA];
+    RAND_bytes(alt_shared_secret, TEMPO_LEN_LAMBDA);
+    if (CRYPTO_memcmp(local_tag, tag, TEMPO_LEN_TAG) != 0)
     {
-        memcpy(shared_secret, alt_shared_secret, TEMPO_len_lambda);
+        memcpy(shared_secret, alt_shared_secret, TEMPO_LEN_LAMBDA);
     }
     else
     {
-        memcpy(shared_secret, real_shared_secret, TEMPO_len_lambda);
+        memcpy(shared_secret, real_shared_secret, TEMPO_LEN_LAMBDA);
     }
-    OPENSSL_cleanse(key, KYBER_SSBYTES);
-    OPENSSL_cleanse(alt_shared_secret, TEMPO_len_lambda);
-    OPENSSL_cleanse(real_shared_secret, TEMPO_len_lambda);
+    OPENSSL_cleanse(key, KYBER_LEN_SHARED_SECRET);
+    OPENSSL_cleanse(alt_shared_secret, TEMPO_LEN_LAMBDA);
+    OPENSSL_cleanse(real_shared_secret, TEMPO_LEN_LAMBDA);
 }

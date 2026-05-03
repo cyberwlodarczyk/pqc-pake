@@ -1,22 +1,26 @@
 #include "polyvec.h"
 
-void polyvec_tobytes(uint8_t r[RKEM_POLYVECBYTES], const polyvec *a)
+void RKEM_polyvec_tobytes(uint8_t r[RKEM_LEN_POLYVEC], const RKEM_polyvec *a)
 {
     for (int i = 0; i < RKEM_K; i++)
     {
-        poly_tobytes(r + i * RKEM_POLYBYTES, &a->vec[i]);
+        RKEM_poly_tobytes(r + i * RKEM_LEN_POLY, &a->vec[i]);
     }
 }
 
-void polyvec_frombytes(polyvec *r, const uint8_t a[RKEM_POLYVECBYTES])
+void RKEM_polyvec_frombytes(
+    RKEM_polyvec *r,
+    const uint8_t a[RKEM_LEN_POLYVEC])
 {
     for (int i = 0; i < RKEM_K; i++)
     {
-        poly_frombytes(&r->vec[i], a + i * RKEM_POLYBYTES);
+        RKEM_poly_frombytes(&r->vec[i], a + i * RKEM_LEN_POLY);
     }
 }
 
-void polyvec_compress(uint8_t r[RKEM_POLYVECCOMPRESSEDBYTES], const polyvec *a)
+void RKEM_polyvec_compress(
+    uint8_t r[RKEM_LEN_POLYVEC_COMPRESSED],
+    const RKEM_polyvec *a)
 {
     for (int i = 0; i < RKEM_K; i++)
     {
@@ -45,7 +49,9 @@ void polyvec_compress(uint8_t r[RKEM_POLYVECCOMPRESSEDBYTES], const polyvec *a)
     }
 }
 
-void polyvec_decompress(polyvec *r, const uint8_t a[RKEM_POLYVECCOMPRESSEDBYTES])
+void RKEM_polyvec_decompress(
+    RKEM_polyvec *r,
+    const uint8_t a[RKEM_LEN_POLYVEC_COMPRESSED])
 {
     for (int i = 0; i < RKEM_K; i++)
     {
@@ -65,46 +71,63 @@ void polyvec_decompress(polyvec *r, const uint8_t a[RKEM_POLYVECCOMPRESSEDBYTES]
     }
 }
 
-void polyvec_ntt(polyvec *r)
+void RKEM_polyvec_ntt(RKEM_polyvec *r)
 {
     for (int i = 0; i < RKEM_K; i++)
     {
-        poly_ntt(&r->vec[i]);
+        RKEM_poly_ntt(&r->vec[i]);
     }
 }
 
-void polyvec_invntt_tomont(polyvec *r)
+void RKEM_polyvec_invntt_tomont(RKEM_polyvec *r)
 {
     for (int i = 0; i < RKEM_K; i++)
     {
-        poly_invntt_tomont(&r->vec[i]);
+        RKEM_poly_invntt_tomont(&r->vec[i]);
     }
 }
 
-void polyvec_basemul_acc_montgomery(poly *r, const polyvec *a, const polyvec *b)
+void RKEM_polyvec_basemul_acc_montgomery(
+    RKEM_poly *r,
+    const RKEM_polyvec *a,
+    const RKEM_polyvec *b)
 {
-    poly_basemul_montgomery(r, &a->vec[0], &b->vec[0]);
+    RKEM_poly_basemul_montgomery(r, &a->vec[0], &b->vec[0]);
     for (int i = 1; i < RKEM_K; i++)
     {
-        poly t;
-        poly_basemul_montgomery(&t, &a->vec[i], &b->vec[i]);
-        poly_add(r, r, &t);
+        RKEM_poly t;
+        RKEM_poly_basemul_montgomery(&t, &a->vec[i], &b->vec[i]);
+        RKEM_poly_add(r, r, &t);
     }
-    poly_reduce(r);
+    RKEM_poly_reduce(r);
 }
 
-void polyvec_reduce(polyvec *r)
+void RKEM_polyvec_reduce(RKEM_polyvec *r)
 {
     for (int i = 0; i < RKEM_K; i++)
     {
-        poly_reduce(&r->vec[i]);
+        RKEM_poly_reduce(&r->vec[i]);
     }
 }
 
-void polyvec_add(polyvec *r, const polyvec *a, const polyvec *b)
+void RKEM_polyvec_add(
+    RKEM_polyvec *r,
+    const RKEM_polyvec *a,
+    const RKEM_polyvec *b)
 {
     for (int i = 0; i < RKEM_K; i++)
     {
-        poly_add(&r->vec[i], &a->vec[i], &b->vec[i]);
+        RKEM_poly_add(&r->vec[i], &a->vec[i], &b->vec[i]);
+    }
+}
+
+void RKEM_polyvec_sub(
+    RKEM_polyvec *r,
+    const RKEM_polyvec *a,
+    const RKEM_polyvec *b)
+{
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        RKEM_poly_sub(&r->vec[i], &a->vec[i], &b->vec[i]);
     }
 }

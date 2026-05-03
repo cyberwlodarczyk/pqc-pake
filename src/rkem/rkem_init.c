@@ -1,12 +1,11 @@
-// gcc $CFLAGS $LDFLAGS -o rkem_init rkem_init.c polyvec.c poly.c ntt.c cbd.c reduce.c rkem_internal.c -lkyber -lcrypto
+// gcc $CFLAGS $LDFLAGS -o rkem_init rkem_init.c -lrkem -lkyber -lcrypto
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <openssl/rand.h>
-#include "polyvec.h"
-#include "rkem_internal.h"
+#include <rkem/rkem.h>
 
-void print(polyvec A[RKEM_K])
+void print(RKEM_polyvec A[RKEM_K])
 {
     putchar('{');
     putchar('\n');
@@ -52,13 +51,13 @@ void print(polyvec A[RKEM_K])
 
 int main()
 {
-    polyvec A[RKEM_K], AT[RKEM_K];
-    uint8_t seed[RKEM_SYMBYTES];
-    RAND_bytes(seed, RKEM_SYMBYTES);
-    rkem_fls(A, seed, 0);
+    RKEM_polyvec A[RKEM_K], AT[RKEM_K];
+    uint8_t seed[RKEM_LEN_SEED];
+    RAND_bytes(seed, RKEM_LEN_SEED);
+    RKEM_fls(A, seed, 0);
     printf("A\n\n");
     print(A);
-    rkem_fls(AT, seed, 1);
+    RKEM_fls(AT, seed, 1);
     printf("\n\nAT\n\n");
     print(AT);
     return EXIT_SUCCESS;

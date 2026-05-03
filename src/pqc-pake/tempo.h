@@ -2,23 +2,24 @@
 #define TEMPO_H
 
 #include <stdint.h>
+#include <kyber/polyvec.h>
 
-#define TEMPO_len_lambda 24
-#define TEMPO_len_3lambda (3 * TEMPO_len_lambda)
-#define TEMPO_len_password 32
-#define TEMPO_len_seed 32
-#define TEMPO_len_poly 1152
-#define TEMPO_len_public_key (TEMPO_len_seed + TEMPO_len_poly)
-#define TEMPO_len_secret_key 2400
-#define TEMPO_len_ciphertext 1088
-#define TEMPO_len_tag (2 * TEMPO_len_lambda)
-#define TEMPO_len_shared_secret TEMPO_len_lambda
+#define TEMPO_LEN_LAMBDA 24
+#define TEMPO_LEN_3LAMBDA (3 * TEMPO_LEN_LAMBDA)
+#define TEMPO_LEN_PASSWORD 32
+#define TEMPO_LEN_SEED 32
+#define TEMPO_LEN_POLY 1152
+#define TEMPO_LEN_PUBLIC_KEY (TEMPO_LEN_SEED + TEMPO_LEN_POLY)
+#define TEMPO_LEN_SECRET_KEY 2400
+#define TEMPO_LEN_CIPHERTEXT 1088
+#define TEMPO_LEN_TAG (2 * TEMPO_LEN_LAMBDA)
+#define TEMPO_LEN_SHARED_SECRET TEMPO_LEN_LAMBDA
 
 typedef struct
 {
-    uint8_t u[TEMPO_len_3lambda];
-    uint8_t v[TEMPO_len_poly];
-    uint8_t seed[TEMPO_len_seed];
+    uint8_t u[TEMPO_LEN_3LAMBDA];
+    uint8_t v[TEMPO_LEN_POLY];
+    uint8_t seed[TEMPO_LEN_SEED];
 } TEMPO_apk;
 
 typedef struct
@@ -33,6 +34,8 @@ typedef struct
     TEMPO_fsid fsid;
     const uint8_t *password;
 } TEMPO_session;
+
+void TEMPO_fls(KYBER_polyvec *v, const uint8_t *seed);
 
 void TEMPO_keygen(
     uint8_t *public_key,

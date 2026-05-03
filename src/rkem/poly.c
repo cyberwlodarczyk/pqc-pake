@@ -1,11 +1,10 @@
-#include <stdio.h>
 #include <kyber/symmetric.h>
 #include "cbd.h"
 #include "ntt.h"
 #include "poly.h"
 #include "reduce.h"
 
-void poly_tobytes(uint8_t r[RKEM_POLYBYTES], const poly *a)
+void RKEM_poly_tobytes(uint8_t r[RKEM_LEN_POLY], const RKEM_poly *a)
 {
     for (int i = 0; i < 16; i++)
     {
@@ -32,7 +31,7 @@ void poly_tobytes(uint8_t r[RKEM_POLYBYTES], const poly *a)
     }
 }
 
-void poly_frombytes(poly *r, const uint8_t a[RKEM_POLYBYTES])
+void RKEM_poly_frombytes(RKEM_poly *r, const uint8_t a[RKEM_LEN_POLY])
 {
     for (int i = 0; i < 16; i++)
     {
@@ -60,7 +59,9 @@ void poly_frombytes(poly *r, const uint8_t a[RKEM_POLYBYTES])
     }
 }
 
-void poly_compress(uint8_t r[RKEM_POLYCOMPRESSEDBYTES], const poly *a)
+void RKEM_poly_compress(
+    uint8_t r[RKEM_LEN_POLY_COMPRESSED],
+    const RKEM_poly *a)
 {
     for (int i = 0; i < RKEM_N / 8; i++)
     {
@@ -83,7 +84,9 @@ void poly_compress(uint8_t r[RKEM_POLYCOMPRESSEDBYTES], const poly *a)
     }
 }
 
-void poly_decompress(poly *r, const uint8_t a[RKEM_POLYCOMPRESSEDBYTES])
+void RKEM_poly_decompress(
+    RKEM_poly *r,
+    const uint8_t a[RKEM_LEN_POLY_COMPRESSED])
 {
     for (int i = 0; i < RKEM_N / 8; i++)
     {
@@ -104,7 +107,7 @@ void poly_decompress(poly *r, const uint8_t a[RKEM_POLYCOMPRESSEDBYTES])
     }
 }
 
-void poly_tomsg(uint8_t msg[RKEM_MSGBYTES], const poly *a)
+void RKEM_poly_tomsg(uint8_t msg[RKEM_LEN_MSG], const RKEM_poly *a)
 {
     for (int i = 0; i < RKEM_N / 8; i++)
     {
@@ -124,25 +127,28 @@ void poly_tomsg(uint8_t msg[RKEM_MSGBYTES], const poly *a)
     }
 }
 
-void cmov_int16(int16_t *r, int16_t v, uint16_t b)
+static void cmov_int16(int16_t *r, int16_t v, uint16_t b)
 {
     b = -b;
     *r ^= b & ((*r) ^ v);
 }
 
-void poly_frommsg(poly *r, const uint8_t msg[RKEM_MSGBYTES])
+void RKEM_poly_frommsg(RKEM_poly *r, const uint8_t msg[RKEM_LEN_MSG])
 {
     for (int i = 0; i < RKEM_N / 8; i++)
     {
         for (int j = 0; j < 8; j++)
         {
             r->coeffs[8 * i + j] = 0;
-            cmov_int16(r->coeffs + 8 * i + j, ((RKEM_Q + 1) / 2), (msg[i] >> j) & 1);
+            cmov_int16(
+                r->coeffs + 8 * i + j,
+                ((RKEM_Q + 1) / 2),
+                (msg[i] >> j) & 1);
         }
     }
 }
 
-void poly_add(poly *r, const poly *a, const poly *b)
+void RKEM_poly_add(RKEM_poly *r, const RKEM_poly *a, const RKEM_poly *b)
 {
     for (int i = 0; i < RKEM_N; i++)
     {
@@ -150,7 +156,7 @@ void poly_add(poly *r, const poly *a, const poly *b)
     }
 }
 
-void poly_sub(poly *r, const poly *a, const poly *b)
+void RKEM_poly_sub(RKEM_poly *r, const RKEM_poly *a, const RKEM_poly *b)
 {
     for (int i = 0; i < RKEM_N; i++)
     {
@@ -158,60 +164,80 @@ void poly_sub(poly *r, const poly *a, const poly *b)
     }
 }
 
-void poly_reduce(poly *r)
+void RKEM_poly_reduce(RKEM_poly *r)
 {
     for (int i = 0; i < RKEM_N; i++)
     {
-        r->coeffs[i] = barrett_reduce(r->coeffs[i]);
+        r->coeffs[i] = RKEM_reduce_barrett(r->coeffs[i]);
     }
 }
 
-void poly_ntt(poly *r)
+void RKEM_poly_ntt(RKEM_poly *r)
 {
-    ntt(r->coeffs);
-    poly_reduce(r);
+    RKEM_ntt_forward(r->coeffs);
+    RKEM_poly_reduce(r);
 }
 
-void poly_invntt_tomont(poly *r)
+void RKEM_poly_invntt_tomont(RKEM_poly *r)
 {
-    invntt(r->coeffs);
+    RKEM_ntt_inverse(r->coeffs);
 }
 
-void poly_basemul_montgomery(poly *r, const poly *a, const poly *b)
+void RKEM_poly_basemul_montgomery(
+    RKEM_poly *r,
+    const RKEM_poly *a,
+    const RKEM_poly *b)
 {
     for (int i = 0; i < RKEM_N / 4; i++)
     {
-        basemul(&r->coeffs[4 * i], &a->coeffs[4 * i], &b->coeffs[4 * i], zetas[32 + i]);
-        basemul(&r->coeffs[4 * i + 2], &a->coeffs[4 * i + 2], &b->coeffs[4 * i + 2], -zetas[32 + i]);
+        RKEM_ntt_basemul(
+            &r->coeffs[4 * i],
+            &a->coeffs[4 * i],
+            &b->coeffs[4 * i],
+            RKEM_NTT_ZETAS[RKEM_N / 4 + i]);
+        RKEM_ntt_basemul(
+            &r->coeffs[4 * i + 2],
+            &a->coeffs[4 * i + 2],
+            &b->coeffs[4 * i + 2],
+            -RKEM_NTT_ZETAS[RKEM_N / 4 + i]);
     }
 }
 
-void poly_tomont(poly *r)
+void RKEM_poly_tomont(RKEM_poly *r)
 {
     const int16_t f = (1ULL << 32) % RKEM_Q;
     for (int i = 0; i < RKEM_N; i++)
     {
-        r->coeffs[i] = montgomery_reduce((int32_t)r->coeffs[i] * f);
+        r->coeffs[i] = RKEM_reduce_montgomery((int32_t)r->coeffs[i] * f);
     }
 }
 
-void poly_getnoise_eta1(poly *r, const uint8_t seed[RKEM_SYMBYTES], uint8_t nonce)
+void RKEM_poly_get_noise_eta1(
+    RKEM_poly *r,
+    const uint8_t seed[RKEM_LEN_SEED],
+    uint8_t nonce)
 {
     uint8_t buf[RKEM_ETA1 * RKEM_N / 4];
-    prf(buf, sizeof(buf), seed, nonce);
-    poly_cbd_eta1(r, buf);
+    KYBER_prf(buf, sizeof(buf), seed, nonce);
+    RKEM_cbd_poly_eta1(r, buf);
 }
 
-void poly_getnoise_eta2(poly *r, const uint8_t seed[RKEM_SYMBYTES], uint8_t nonce)
+void RKEM_poly_get_noise_eta2(
+    RKEM_poly *r,
+    const uint8_t seed[RKEM_LEN_SEED],
+    uint8_t nonce)
 {
     uint8_t buf[RKEM_ETA2 * RKEM_N / 4];
-    prf(buf, sizeof(buf), seed, nonce);
-    poly_cbd_eta2(r, buf);
+    KYBER_prf(buf, sizeof(buf), seed, nonce);
+    RKEM_cbd_poly_eta2(r, buf);
 }
 
-void poly_getnoise_eta3(poly *r, const uint8_t seed[RKEM_SYMBYTES], uint8_t nonce)
+void RKEM_poly_get_noise_eta3(
+    RKEM_poly *r,
+    const uint8_t seed[RKEM_LEN_SEED],
+    uint8_t nonce)
 {
     uint8_t buf[RKEM_ETA3 * RKEM_N / 4];
-    prf(buf, sizeof(buf), seed, nonce);
-    poly_cbd_eta3(r, buf);
+    KYBER_prf(buf, sizeof(buf), seed, nonce);
+    RKEM_cbd_poly_eta3(r, buf);
 }

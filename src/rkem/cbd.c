@@ -1,5 +1,3 @@
-#include <stdint.h>
-#include "params.h"
 #include "cbd.h"
 
 static uint32_t load32_littleendian(const uint8_t x[4])
@@ -12,7 +10,7 @@ static uint32_t load32_littleendian(const uint8_t x[4])
     return r;
 }
 
-static void cbd2(poly *r, const uint8_t buf[2 * RKEM_N / 4])
+static void cbd2(RKEM_poly *r, const uint8_t buf[2 * RKEM_N / 4])
 {
     for (int i = 0; i < RKEM_N / 8; i++)
     {
@@ -28,7 +26,7 @@ static void cbd2(poly *r, const uint8_t buf[2 * RKEM_N / 4])
     }
 }
 
-static void cbd192(poly *r, const uint8_t buf[192 * RKEM_N / 4])
+static void cbd192(RKEM_poly *r, const uint8_t buf[192 * RKEM_N / 4])
 {
     for (int i = 0; i < 128; i++)
     {
@@ -50,17 +48,23 @@ static void cbd192(poly *r, const uint8_t buf[192 * RKEM_N / 4])
     }
 }
 
-void poly_cbd_eta1(poly *r, const uint8_t buf[RKEM_ETA1 * RKEM_N / 4])
+void RKEM_cbd_poly_eta1(
+    RKEM_poly *r,
+    const uint8_t buf[RKEM_ETA1 * RKEM_N / 4])
 {
     cbd2(r, buf);
 }
 
-void poly_cbd_eta2(poly *r, const uint8_t buf[RKEM_ETA2 * RKEM_N / 4])
+void RKEM_cbd_poly_eta2(
+    RKEM_poly *r,
+    const uint8_t buf[RKEM_ETA2 * RKEM_N / 4])
 {
     cbd2(r, buf);
 }
 
-void poly_cbd_eta3(poly *r, const uint8_t buf[RKEM_ETA3 * RKEM_N / 4])
+void RKEM_cbd_poly_eta3(
+    RKEM_poly *r,
+    const uint8_t buf[RKEM_ETA3 * RKEM_N / 4])
 {
     cbd192(r, buf);
 }

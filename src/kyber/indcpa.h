@@ -1,27 +1,29 @@
-#ifndef INDCPA_H
-#define INDCPA_H
+#ifndef KYBER_INDCPA_H
+#define KYBER_INDCPA_H
 
 #include <stdint.h>
 #include "params.h"
 #include "polyvec.h"
 
-#define gen_matrix KYBER_NAMESPACE(gen_matrix)
-void gen_matrix(polyvec *a, const uint8_t seed[KYBER_SYMBYTES], int transposed);
+void KYBER_gen_matrix(
+    KYBER_polyvec *a,
+    const uint8_t seed[KYBER_LEN_SEED],
+    int transposed);
 
-#define indcpa_keypair_derand KYBER_NAMESPACE(indcpa_keypair_derand)
-void indcpa_keypair_derand(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
-                           uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES],
-                           const uint8_t coins[KYBER_SYMBYTES]);
+void KYBER_indcpa_keygen_derand(
+    uint8_t pk[KYBER_INDCPA_LEN_PUBLIC_KEY],
+    uint8_t sk[KYBER_INDCPA_LEN_SECRET_KEY],
+    const uint8_t coins[KYBER_LEN_SEED]);
 
-#define indcpa_enc KYBER_NAMESPACE(indcpa_enc)
-void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
-                const uint8_t m[KYBER_INDCPA_MSGBYTES],
-                const uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
-                const uint8_t coins[KYBER_SYMBYTES]);
+void KYBER_indcpa_encaps(
+    uint8_t c[KYBER_INDCPA_LEN_CIPHERTEXT],
+    const uint8_t m[KYBER_INDCPA_LEN_MSG],
+    const uint8_t pk[KYBER_INDCPA_LEN_PUBLIC_KEY],
+    const uint8_t coins[KYBER_LEN_SEED]);
 
-#define indcpa_dec KYBER_NAMESPACE(indcpa_dec)
-void indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
-                const uint8_t c[KYBER_INDCPA_BYTES],
-                const uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES]);
+void KYBER_indcpa_decaps(
+    uint8_t m[KYBER_INDCPA_LEN_MSG],
+    const uint8_t c[KYBER_INDCPA_LEN_CIPHERTEXT],
+    const uint8_t sk[KYBER_INDCPA_LEN_SECRET_KEY]);
 
 #endif

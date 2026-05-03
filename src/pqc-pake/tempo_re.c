@@ -4,9 +4,8 @@
 #include <kyber/symmetric.h>
 #include <rkem/xrkem.h>
 #include "tempo_re.h"
-#include "tempo_internal.h"
 
-void tempo_re_hash(
+static void hash(
     uint8_t *v_hash,
     const TEMPO_RE_session sess,
     const uint8_t *seed,
@@ -15,14 +14,14 @@ void tempo_re_hash(
     keccak_state state;
     shake256_init(&state);
     shake256_absorb(&state, (uint8_t *)&sess.fsid, sizeof(TEMPO_RE_fsid));
-    shake256_absorb(&state, sess.password, TEMPO_RE_len_password);
-    shake256_absorb(&state, seed, TEMPO_RE_len_seed);
-    shake256_absorb(&state, v_buf, TEMPO_RE_len_poly);
-    shake256_squeeze(v_hash, TEMPO_RE_len_3lambda, &state);
+    shake256_absorb(&state, sess.password, TEMPO_RE_LEN_PASSWORD);
+    shake256_absorb(&state, seed, TEMPO_RE_LEN_SEED);
+    shake256_absorb(&state, v_buf, TEMPO_RE_LEN_POLY);
+    shake256_squeeze(v_hash, TEMPO_RE_LEN_3LAMBDA, &state);
     OPENSSL_cleanse(&state, sizeof(keccak_state));
 }
 
-void tempo_re_hash_key(
+static void hash_key(
     uint8_t *tag,
     uint8_t *shared_secret,
     const TEMPO_RE_session sess,
@@ -34,13 +33,13 @@ void tempo_re_hash_key(
     keccak_state state;
     shake256_init(&state);
     shake256_absorb(&state, (uint8_t *)&sess.fsid, sizeof(TEMPO_RE_fsid));
-    shake256_absorb(&state, sess.password, TEMPO_RE_len_password);
-    shake256_absorb(&state, public_key, TEMPO_RE_len_public_key);
+    shake256_absorb(&state, sess.password, TEMPO_RE_LEN_PASSWORD);
+    shake256_absorb(&state, public_key, TEMPO_RE_LEN_PUBLIC_KEY);
     shake256_absorb(&state, (uint8_t *)apk, sizeof(TEMPO_RE_apk));
-    shake256_absorb(&state, ciphertext, TEMPO_RE_len_ciphertext);
-    shake256_absorb(&state, key, XRKEM_len_shared_secret);
-    shake256_squeeze(tag, TEMPO_RE_len_tag, &state);
-    shake256_squeeze(shared_secret, TEMPO_RE_len_shared_secret, &state);
+    shake256_absorb(&state, ciphertext, TEMPO_RE_LEN_CIPHERTEXT);
+    shake256_absorb(&state, key, XRKEM_LEN_SHARED_SECRET);
+    shake256_squeeze(tag, TEMPO_RE_LEN_TAG, &state);
+    shake256_squeeze(shared_secret, TEMPO_RE_LEN_SHARED_SECRET, &state);
     OPENSSL_cleanse(&state, sizeof(keccak_state));
 }
 
@@ -51,21 +50,21 @@ void TEMPO_RE_keygen(
     const TEMPO_RE_session sess)
 {
     XRKEM_keygen(public_key, secret_key);
-    memcpy(apk->seed, public_key + XRKEM_len_poly, XRKEM_len_seed);
-    uint8_t r_seed[TEMPO_RE_len_3lambda];
-    RAND_bytes(r_seed, TEMPO_RE_len_3lambda);
-    uint8_t rand_public_key[XRKEM_len_public_key];
+    memcpy(apk->seed, public_key + XRKEM_LEN_POLYVEC, XRKEM_LEN_SEED);
+    uint8_t r_seed[TEMPO_RE_LEN_3LAMBDA];
+    RAND_bytes(r_seed, TEMPO_RE_LEN_3LAMBDA);
+    uint8_t rand_public_key[XRKEM_LEN_PUBLIC_KEY];
     XRKEM_rand(rand_public_key, r_seed, public_key);
-    memcpy(apk->v, rand_public_key, XRKEM_len_poly);
-    uint8_t v_hash[TEMPO_RE_len_3lambda];
-    tempo_re_hash(v_hash, sess, apk->seed, apk->v);
-    for (int i = 0; i < TEMPO_RE_len_3lambda; i++)
+    memcpy(apk->v, rand_public_key, XRKEM_LEN_POLYVEC);
+    uint8_t v_hash[TEMPO_RE_LEN_3LAMBDA];
+    hash(v_hash, sess, apk->seed, apk->v);
+    for (int i = 0; i < TEMPO_RE_LEN_3LAMBDA; i++)
     {
         apk->u[i] = v_hash[i] ^ r_seed[i];
     }
-    OPENSSL_cleanse(rand_public_key, XRKEM_len_public_key);
-    OPENSSL_cleanse(r_seed, TEMPO_RE_len_3lambda);
-    OPENSSL_cleanse(v_hash, TEMPO_RE_len_3lambda);
+    OPENSSL_cleanse(rand_public_key, XRKEM_LEN_PUBLIC_KEY);
+    OPENSSL_cleanse(r_seed, TEMPO_RE_LEN_3LAMBDA);
+    OPENSSL_cleanse(v_hash, TEMPO_RE_LEN_3LAMBDA);
 }
 
 void TEMPO_RE_encaps(
@@ -75,21 +74,21 @@ void TEMPO_RE_encaps(
     const TEMPO_RE_session sess,
     const TEMPO_RE_apk *apk)
 {
-    uint8_t v_hash[TEMPO_RE_len_3lambda];
-    tempo_re_hash(v_hash, sess, apk->seed, apk->v);
-    uint8_t r_seed[TEMPO_RE_len_3lambda];
-    for (int i = 0; i < TEMPO_RE_len_3lambda; i++)
+    uint8_t v_hash[TEMPO_RE_LEN_3LAMBDA];
+    hash(v_hash, sess, apk->seed, apk->v);
+    uint8_t r_seed[TEMPO_RE_LEN_3LAMBDA];
+    for (int i = 0; i < TEMPO_RE_LEN_3LAMBDA; i++)
     {
         r_seed[i] = v_hash[i] ^ apk->u[i];
     }
-    uint8_t rand_public_key[XRKEM_len_public_key];
-    memcpy(rand_public_key, apk->v, XRKEM_len_poly);
-    memcpy(rand_public_key + XRKEM_len_poly, apk->seed, XRKEM_len_seed);
-    uint8_t public_key[XRKEM_len_public_key];
+    uint8_t rand_public_key[XRKEM_LEN_PUBLIC_KEY];
+    memcpy(rand_public_key, apk->v, XRKEM_LEN_POLYVEC);
+    memcpy(rand_public_key + XRKEM_LEN_POLYVEC, apk->seed, XRKEM_LEN_SEED);
+    uint8_t public_key[XRKEM_LEN_PUBLIC_KEY];
     XRKEM_derand(public_key, r_seed, rand_public_key);
-    uint8_t key[XRKEM_len_shared_secret];
+    uint8_t key[XRKEM_LEN_SHARED_SECRET];
     XRKEM_encaps(ciphertext, key, public_key);
-    tempo_re_hash_key(
+    hash_key(
         tag,
         shared_secret,
         sess,
@@ -97,11 +96,11 @@ void TEMPO_RE_encaps(
         apk,
         ciphertext,
         key);
-    OPENSSL_cleanse(key, XRKEM_len_shared_secret);
-    OPENSSL_cleanse(rand_public_key, XRKEM_len_public_key);
-    OPENSSL_cleanse(public_key, XRKEM_len_public_key);
-    OPENSSL_cleanse(v_hash, TEMPO_RE_len_3lambda);
-    OPENSSL_cleanse(r_seed, TEMPO_RE_len_3lambda);
+    OPENSSL_cleanse(key, XRKEM_LEN_SHARED_SECRET);
+    OPENSSL_cleanse(rand_public_key, XRKEM_LEN_PUBLIC_KEY);
+    OPENSSL_cleanse(public_key, XRKEM_LEN_PUBLIC_KEY);
+    OPENSSL_cleanse(v_hash, TEMPO_RE_LEN_3LAMBDA);
+    OPENSSL_cleanse(r_seed, TEMPO_RE_LEN_3LAMBDA);
 }
 
 void TEMPO_RE_decaps(
@@ -113,11 +112,11 @@ void TEMPO_RE_decaps(
     const uint8_t *public_key,
     const uint8_t *secret_key)
 {
-    uint8_t key[XRKEM_len_shared_secret];
+    uint8_t key[XRKEM_LEN_SHARED_SECRET];
     XRKEM_decaps_derand(key, ciphertext, secret_key);
-    uint8_t local_tag[TEMPO_RE_len_tag];
-    uint8_t real_shared_secret[TEMPO_RE_len_shared_secret];
-    tempo_re_hash_key(
+    uint8_t local_tag[TEMPO_RE_LEN_TAG];
+    uint8_t real_shared_secret[TEMPO_RE_LEN_SHARED_SECRET];
+    hash_key(
         local_tag,
         real_shared_secret,
         sess,
@@ -125,17 +124,17 @@ void TEMPO_RE_decaps(
         apk,
         ciphertext,
         key);
-    uint8_t alt_shared_secret[TEMPO_RE_len_shared_secret];
-    RAND_bytes(alt_shared_secret, TEMPO_RE_len_shared_secret);
-    if (CRYPTO_memcmp(local_tag, tag, TEMPO_RE_len_tag) != 0)
+    uint8_t alt_shared_secret[TEMPO_RE_LEN_SHARED_SECRET];
+    RAND_bytes(alt_shared_secret, TEMPO_RE_LEN_SHARED_SECRET);
+    if (CRYPTO_memcmp(local_tag, tag, TEMPO_RE_LEN_TAG) != 0)
     {
-        memcpy(shared_secret, alt_shared_secret, TEMPO_RE_len_shared_secret);
+        memcpy(shared_secret, alt_shared_secret, TEMPO_RE_LEN_SHARED_SECRET);
     }
     else
     {
-        memcpy(shared_secret, real_shared_secret, TEMPO_RE_len_shared_secret);
+        memcpy(shared_secret, real_shared_secret, TEMPO_RE_LEN_SHARED_SECRET);
     }
-    OPENSSL_cleanse(key, XRKEM_len_shared_secret);
-    OPENSSL_cleanse(alt_shared_secret, TEMPO_RE_len_shared_secret);
-    OPENSSL_cleanse(real_shared_secret, TEMPO_RE_len_shared_secret);
+    OPENSSL_cleanse(key, XRKEM_LEN_SHARED_SECRET);
+    OPENSSL_cleanse(alt_shared_secret, TEMPO_RE_LEN_SHARED_SECRET);
+    OPENSSL_cleanse(real_shared_secret, TEMPO_RE_LEN_SHARED_SECRET);
 }

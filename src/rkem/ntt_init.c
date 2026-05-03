@@ -1,17 +1,13 @@
-// gcc -o ntt_init ntt_init.c reduce.c
+// gcc $CFLAGS $LDFLAGS -o ntt_init ntt_init.c -lrkem
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "reduce.h"
+#include <rkem/ntt.h>
+#include <rkem/reduce.h>
 
 #define RKEM_ROOT_OF_UNITY 202
 
-static int16_t fqmul(int16_t a, int16_t b)
-{
-    return montgomery_reduce((int32_t)a * b);
-}
-
-static const uint8_t tree[64] = {
+const uint8_t tree[RKEM_N / 2] = {
     0, 32, 16, 48, 8, 40, 24, 56,
     4, 36, 20, 52, 12, 44, 28, 60,
     2, 34, 18, 50, 10, 42, 26, 58,
@@ -21,15 +17,17 @@ static const uint8_t tree[64] = {
     3, 35, 19, 51, 11, 43, 27, 59,
     7, 39, 23, 55, 15, 47, 31, 63};
 
-void init_ntt(int16_t zetas[64])
+void init_ntt(int16_t zetas[RKEM_N / 2])
 {
-    int16_t tmp[64];
-    tmp[0] = MONT;
-    for (int i = 1; i < 64; i++)
+    int16_t tmp[RKEM_N / 2];
+    tmp[0] = RKEM_MONT;
+    for (int i = 1; i < RKEM_N / 2; i++)
     {
-        tmp[i] = fqmul(tmp[i - 1], MONT * RKEM_ROOT_OF_UNITY % RKEM_Q);
+        tmp[i] = RKEM_ntt_fqmul(
+            tmp[i - 1],
+            RKEM_MONT * RKEM_ROOT_OF_UNITY % RKEM_Q);
     }
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < RKEM_N / 2; i++)
     {
         zetas[i] = tmp[tree[i]];
         if (zetas[i] > RKEM_Q / 2)
@@ -45,9 +43,9 @@ void init_ntt(int16_t zetas[64])
 
 int main()
 {
-    int16_t zetas[64];
+    int16_t zetas[RKEM_N / 2];
     init_ntt(zetas);
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < RKEM_N / 2; i++)
     {
         if (i != 0)
         {

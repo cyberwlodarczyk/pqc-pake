@@ -1,14 +1,14 @@
 #ifndef XRKEM_H
 #define XRKEM_H
 
-#include <stdint.h>
+#include "rkem.h"
 
-#define XRKEM_len_poly 1040
-#define XRKEM_len_seed 32
-#define XRKEM_len_public_key (XRKEM_len_poly + XRKEM_len_seed)
-#define XRKEM_len_secret_key XRKEM_len_poly
-#define XRKEM_len_ciphertext 848
-#define XRKEM_len_shared_secret 16
+#define XRKEM_LEN_POLYVEC RKEM_LEN_POLYVEC
+#define XRKEM_LEN_SEED RKEM_LEN_SEED
+#define XRKEM_LEN_PUBLIC_KEY (XRKEM_LEN_POLYVEC + XRKEM_LEN_SEED)
+#define XRKEM_LEN_SECRET_KEY RKEM_LEN_SECRET_KEY
+#define XRKEM_LEN_CIPHERTEXT RKEM_LEN_CIPHERTEXT
+#define XRKEM_LEN_SHARED_SECRET RKEM_LEN_MSG
 
 void XRKEM_keygen(uint8_t *public_key, uint8_t *secret_key);
 

@@ -3,22 +3,22 @@
 
 #include <stdint.h>
 
-#define TEMPO_RE_len_lambda 24
-#define TEMPO_RE_len_3lambda (3 * TEMPO_RE_len_lambda)
-#define TEMPO_RE_len_password 32
-#define TEMPO_RE_len_seed 32
-#define TEMPO_RE_len_poly 1040
-#define TEMPO_RE_len_public_key (TEMPO_RE_len_seed + TEMPO_RE_len_poly)
-#define TEMPO_RE_len_secret_key TEMPO_RE_len_poly
-#define TEMPO_RE_len_ciphertext 848
-#define TEMPO_RE_len_tag (2 * TEMPO_RE_len_lambda)
-#define TEMPO_RE_len_shared_secret TEMPO_RE_len_lambda
+#define TEMPO_RE_LEN_LAMBDA 24
+#define TEMPO_RE_LEN_3LAMBDA (3 * TEMPO_RE_LEN_LAMBDA)
+#define TEMPO_RE_LEN_PASSWORD 32
+#define TEMPO_RE_LEN_SEED 32
+#define TEMPO_RE_LEN_POLY 1040
+#define TEMPO_RE_LEN_PUBLIC_KEY (TEMPO_RE_LEN_SEED + TEMPO_RE_LEN_POLY)
+#define TEMPO_RE_LEN_SECRET_KEY TEMPO_RE_LEN_POLY
+#define TEMPO_RE_LEN_CIPHERTEXT 848
+#define TEMPO_RE_LEN_TAG (2 * TEMPO_RE_LEN_LAMBDA)
+#define TEMPO_RE_LEN_SHARED_SECRET TEMPO_RE_LEN_LAMBDA
 
 typedef struct
 {
-    uint8_t u[TEMPO_RE_len_3lambda];
-    uint8_t v[TEMPO_RE_len_poly];
-    uint8_t seed[TEMPO_RE_len_seed];
+    uint8_t u[TEMPO_RE_LEN_3LAMBDA];
+    uint8_t v[TEMPO_RE_LEN_POLY];
+    uint8_t seed[TEMPO_RE_LEN_SEED];
 } TEMPO_RE_apk;
 
 typedef struct
