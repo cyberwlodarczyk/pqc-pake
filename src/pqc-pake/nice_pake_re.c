@@ -38,9 +38,7 @@ void NICE_PAKE_RE_encaps(
     memcpy(public_key + XRKEM_LEN_POLYVEC, seed_a_copy, XRKEM_LEN_SEED);
     memcpy(public_key, poly, XRKEM_LEN_POLYVEC);
     RAND_bytes(seed_b, XRKEM_LEN_SEED);
-    uint8_t rand_public_key[XRKEM_LEN_PUBLIC_KEY];
-    XRKEM_rand(rand_public_key, seed_b, public_key);
-    XRKEM_encaps(ciphertext, shared_secret, rand_public_key);
+    XRKEM_encaps(ciphertext, shared_secret, public_key, seed_b);
     for (int i = 0; i < XRKEM_LEN_SEED; i++)
     {
         seed_b[i] ^= password[XRKEM_LEN_SEED + i];

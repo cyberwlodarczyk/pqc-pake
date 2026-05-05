@@ -3,6 +3,7 @@
 #include <kyber/kyber.h>
 #include <rkem/rkem.h>
 #include <rkem/xrkem.h>
+#include <rkem/yrkem.h>
 #include <pqc-pake/nice_pake.h>
 #include <pqc-pake/nice_pake_re.h>
 #include <pqc-pake/tempo.h>
@@ -50,32 +51,27 @@ int exchange_xrkem()
     XRKEM_keygen(pk, sk);
     uint8_t seed[XRKEM_LEN_SEED];
     RAND_bytes(seed, XRKEM_LEN_SEED);
-    uint8_t rand_pk[XRKEM_LEN_PUBLIC_KEY];
-    XRKEM_rand(rand_pk, seed, pk);
     uint8_t ct[XRKEM_LEN_CIPHERTEXT];
     uint8_t ss1[XRKEM_LEN_SHARED_SECRET];
-    XRKEM_encaps(ct, ss1, rand_pk);
+    XRKEM_encaps(ct, ss1, pk, seed);
     uint8_t ss2[XRKEM_LEN_SHARED_SECRET];
     XRKEM_decaps(ss2, ct, sk, seed);
-    return cmp(ss1, ss2, RKEM_LEN_SHARED_SECRET);
+    return cmp(ss1, ss2, XRKEM_LEN_SHARED_SECRET);
 }
 
-int exchange_xrkem_derand()
+int exchange_yrkem()
 {
-    uint8_t pk[XRKEM_LEN_PUBLIC_KEY];
-    uint8_t sk[XRKEM_LEN_SECRET_KEY];
-    XRKEM_keygen(pk, sk);
-    uint8_t seed[XRKEM_LEN_SEED];
-    RAND_bytes(seed, XRKEM_LEN_SEED);
-    uint8_t rand_pk[XRKEM_LEN_PUBLIC_KEY];
-    XRKEM_rand(rand_pk, seed, pk);
-    XRKEM_derand(pk, seed, rand_pk);
-    uint8_t ct[XRKEM_LEN_CIPHERTEXT];
-    uint8_t ss1[XRKEM_LEN_SHARED_SECRET];
-    XRKEM_encaps(ct, ss1, pk);
-    uint8_t ss2[XRKEM_LEN_SHARED_SECRET];
-    XRKEM_decaps_derand(ss2, ct, sk);
-    return cmp(ss1, ss2, RKEM_LEN_SHARED_SECRET);
+    uint8_t pk[YRKEM_LEN_PUBLIC_KEY];
+    uint8_t sk[YRKEM_LEN_SECRET_KEY];
+    uint8_t seed[YRKEM_LEN_SEED];
+    RAND_bytes(seed, YRKEM_LEN_SEED);
+    YRKEM_keygen(pk, sk, seed);
+    uint8_t ct[YRKEM_LEN_CIPHERTEXT];
+    uint8_t ss1[YRKEM_LEN_SHARED_SECRET];
+    YRKEM_encaps(ct, ss1, pk, seed);
+    uint8_t ss2[YRKEM_LEN_SHARED_SECRET];
+    YRKEM_decaps(ss2, ct, sk);
+    return cmp(ss1, ss2, YRKEM_LEN_SHARED_SECRET);
 }
 
 int exchange_nice_pake(const uint8_t *pw1, const uint8_t *pw2)

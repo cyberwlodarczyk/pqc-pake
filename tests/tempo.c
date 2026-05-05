@@ -8,36 +8,48 @@
 #include <kyber/polyvec.h>
 #include "test.h"
 
-#define ROUNDS 1000
-
-int polyvec_compare(const KYBER_polyvec *a, const KYBER_polyvec *b)
+int matrix_compare(const KYBER_polyvec *a, const KYBER_polyvec *b)
 {
     for (int i = 0; i < KYBER_K; i++)
     {
-        for (int j = 0; j < KYBER_N; j++)
+        for (int j = 0; j < KYBER_K; j++)
         {
-            if (a->vec[i].coeffs[j] != b->vec[i].coeffs[j])
+            for (int k = 0; k < KYBER_N; k++)
             {
-                return 0;
+                if (a[i].vec[j].coeffs[k] != b[i].vec[j].coeffs[k])
+                {
+                    return 0;
+                }
             }
         }
     }
     return 1;
 }
 
-int test_fls()
+int test_gen_matrix(int transposed)
 {
     uint8_t seed[KYBER_LEN_SEED];
     RAND_bytes(seed, KYBER_LEN_SEED);
     KYBER_polyvec a1[KYBER_K];
-    KYBER_gen_matrix(a1, seed, 0);
-    KYBER_polyvec a2;
-    TEMPO_fls(&a2, seed);
-    return polyvec_compare(&a1[0], &a2);
+    KYBER_gen_matrix(a1, seed, transposed);
+    KYBER_polyvec a2[KYBER_K];
+    TEMPO_gen_matrix_fls(a2, seed, transposed);
+    return matrix_compare(a1, a2);
+}
+
+int test_gen_matrix_0()
+{
+    return test_gen_matrix(0);
+}
+
+int test_gen_matrix_1()
+{
+    return test_gen_matrix(1);
 }
 
 int main()
 {
-    int ok = test_run("fls", test_fls, ROUNDS);
+    int ok = test_run("gen_matrix", test_gen_matrix_0);
+    ok = test_run("gen_matrix_transposed", test_gen_matrix_1) && ok;
     return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

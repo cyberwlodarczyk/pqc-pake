@@ -4,21 +4,19 @@
 #include "exchange.h"
 #include "test.h"
 
-#define ROUNDS 1000
-
 int main()
 {
-    test_speed("kyber", exchange_kyber, ROUNDS);
-    test_speed("rkem", exchange_rkem, ROUNDS);
-    test_speed("xrkem", exchange_xrkem, ROUNDS);
-    test_speed("xrkem_derand", exchange_xrkem_derand, ROUNDS);
-    test_speed("nice_pake_correct", exchange_nice_pake_correct, ROUNDS);
-    test_speed("nice_pake_incorrect", exchange_nice_pake_incorrect, ROUNDS);
-    test_speed("nice_pake_re_correct", exchange_nice_pake_re_correct, ROUNDS);
-    test_speed("nice_pake_re_incorrect", exchange_nice_pake_re_incorrect, ROUNDS);
-    test_speed("tempo_correct", exchange_tempo_correct, ROUNDS);
-    test_speed("tempo_incorrect", exchange_tempo_incorrect, ROUNDS);
-    test_speed("tempo_re_correct", exchange_tempo_re_correct, ROUNDS);
-    test_speed("tempo_re_incorrect", exchange_tempo_re_incorrect, ROUNDS);
+    test_speed("kyber", exchange_kyber);
+    test_speed("rkem", exchange_rkem);
+    test_speed("xrkem", exchange_xrkem);
+    test_speed("yrkem", exchange_yrkem);
+    test_speed("nice_pake_correct", exchange_nice_pake_correct);
+    test_speed("nice_pake_incorrect", exchange_nice_pake_incorrect);
+    test_speed("nice_pake_re_correct", exchange_nice_pake_re_correct);
+    test_speed("nice_pake_re_incorrect", exchange_nice_pake_re_incorrect);
+    test_speed("tempo_correct", exchange_tempo_correct);
+    test_speed("tempo_incorrect", exchange_tempo_incorrect);
+    test_speed("tempo_re_correct", exchange_tempo_re_correct);
+    test_speed("tempo_re_incorrect", exchange_tempo_re_incorrect);
     return EXIT_SUCCESS;
 }

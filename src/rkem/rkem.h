@@ -14,7 +14,11 @@ extern const RKEM_polyvec RKEM_A[RKEM_K];
 
 extern const RKEM_polyvec RKEM_AT[RKEM_K];
 
-void RKEM_fls(RKEM_polyvec *a, const uint8_t *seed, int transposed);
+void RKEM_gen_matrix(RKEM_polyvec *a, const uint8_t *seed, int transposed);
+
+void RKEM_gen_matrix_fls(RKEM_polyvec *a, const uint8_t *seed, int transposed);
+
+void RKEM_transpose_matrix(RKEM_polyvec *a);
 
 void RKEM_keygen_a(
     uint8_t *public_key,

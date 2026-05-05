@@ -5,22 +5,20 @@
 #include "exchange.h"
 #include "test.h"
 
-#define ROUNDS 1000
-
 int main()
 {
     int ok = 1;
-    ok = test_run("kyber", exchange_kyber, ROUNDS) && ok;
-    ok = test_run("rkem", exchange_rkem, ROUNDS) && ok;
-    ok = test_run("xrkem", exchange_xrkem, ROUNDS) && ok;
-    ok = test_run("xrkem_derand", exchange_xrkem_derand, ROUNDS) && ok;
-    ok = test_run("nice_pake_correct", exchange_nice_pake_correct, ROUNDS) && ok;
-    ok = test_run("nice_pake_incorrect", exchange_nice_pake_incorrect, ROUNDS) && ok;
-    ok = test_run("nice_pake_re_correct", exchange_nice_pake_re_correct, ROUNDS) && ok;
-    ok = test_run("nice_pake_re_incorrect", exchange_nice_pake_re_incorrect, ROUNDS) && ok;
-    ok = test_run("tempo_correct", exchange_tempo_correct, ROUNDS) && ok;
-    ok = test_run("tempo_incorrect", exchange_tempo_incorrect, ROUNDS) && ok;
-    ok = test_run("tempo_re_correct", exchange_tempo_re_correct, ROUNDS) && ok;
-    ok = test_run("tempo_re_incorrect", exchange_tempo_re_incorrect, ROUNDS) && ok;
+    ok = test_run("kyber", exchange_kyber) && ok;
+    ok = test_run("rkem", exchange_rkem) && ok;
+    ok = test_run("xrkem", exchange_xrkem) && ok;
+    ok = test_run("yrkem", exchange_yrkem) && ok;
+    ok = test_run("nice_pake_correct", exchange_nice_pake_correct) && ok;
+    ok = test_run("nice_pake_incorrect", exchange_nice_pake_incorrect) && ok;
+    ok = test_run("nice_pake_re_correct", exchange_nice_pake_re_correct) && ok;
+    ok = test_run("nice_pake_re_incorrect", exchange_nice_pake_re_incorrect) && ok;
+    ok = test_run("tempo_correct", exchange_tempo_correct) && ok;
+    ok = test_run("tempo_incorrect", exchange_tempo_incorrect) && ok;
+    ok = test_run("tempo_re_correct", exchange_tempo_re_correct) && ok;
+    ok = test_run("tempo_re_incorrect", exchange_tempo_re_incorrect) && ok;
     return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <openssl/rand.h>
-#include <rkem/rkem.h>
+#include <rkem/xrkem.h>
 
 void print(RKEM_polyvec A[RKEM_K])
 {
@@ -54,10 +54,10 @@ int main()
     RKEM_polyvec A[RKEM_K], AT[RKEM_K];
     uint8_t seed[RKEM_LEN_SEED];
     RAND_bytes(seed, RKEM_LEN_SEED);
-    RKEM_fls(A, seed, 0);
+    RKEM_gen_matrix(A, seed, 0);
     printf("A\n\n");
     print(A);
-    RKEM_fls(AT, seed, 1);
+    RKEM_gen_matrix(AT, seed, 1);
     printf("\n\nAT\n\n");
     print(AT);
     return EXIT_SUCCESS;

@@ -35,7 +35,10 @@ typedef struct
     const uint8_t *password;
 } TEMPO_session;
 
-void TEMPO_fls(KYBER_polyvec *v, const uint8_t *seed);
+void TEMPO_gen_matrix_fls(
+    KYBER_polyvec *a,
+    const uint8_t *seed,
+    int tranposed);
 
 void TEMPO_keygen(
     uint8_t *public_key,

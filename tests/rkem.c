@@ -8,9 +8,8 @@
 #include <rkem/polyvec.h>
 #include <rkem/reduce.h>
 #include <rkem/ntt.h>
+#include <rkem/rkem.h>
 #include "test.h"
-
-#define ROUNDS 100000
 
 void center_coeff(int16_t *a)
 {
@@ -70,6 +69,18 @@ int polyvec_compare(const RKEM_polyvec *v1, const RKEM_polyvec *v2)
     for (int i = 0; i < RKEM_K; i++)
     {
         if (!poly_compare(&v1->vec[i], &v2->vec[i]))
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int matrix_compare(const RKEM_polyvec *a, const RKEM_polyvec *b)
+{
+    for (int i = 0; i < RKEM_K; i++)
+    {
+        if (!polyvec_compare(&a[i], &b[i]))
         {
             return 0;
         }
@@ -289,19 +300,55 @@ int test_polyvec_compression()
     return polyvec_compression_check(&v1, &v2);
 }
 
+int test_gen_matrix(int transposed)
+{
+    uint8_t seed[RKEM_LEN_SEED];
+    RAND_bytes(seed, RKEM_LEN_SEED);
+    RKEM_polyvec a1[RKEM_K];
+    RKEM_gen_matrix(a1, seed, transposed);
+    RKEM_polyvec a2[RKEM_K];
+    RKEM_gen_matrix_fls(a2, seed, transposed);
+    return matrix_compare(a1, a2);
+}
+
+int test_gen_matrix_0()
+{
+    return test_gen_matrix(0);
+}
+
+int test_gen_matrix_1()
+{
+    return test_gen_matrix(1);
+}
+
+int test_transpose_matrix()
+{
+    uint8_t seed[RKEM_LEN_SEED];
+    RAND_bytes(seed, RKEM_LEN_SEED);
+    RKEM_polyvec a1[RKEM_K];
+    RKEM_gen_matrix(a1, seed, 0);
+    RKEM_polyvec a2[RKEM_K];
+    RKEM_gen_matrix(a2, seed, 1);
+    RKEM_transpose_matrix(a1);
+    return matrix_compare(a1, a2);
+}
+
 int main()
 {
     int ok = 1;
-    ok = test_run("ntt", test_ntt, ROUNDS) && ok;
-    ok = test_run("poly_bytes", test_poly_bytes, ROUNDS) && ok;
-    ok = test_run("poly_compression", test_poly_compression, ROUNDS) && ok;
-    ok = test_run("poly_tomsg", test_poly_tomsg, ROUNDS) && ok;
-    ok = test_run("poly_frommsg", test_poly_frommsg, ROUNDS) && ok;
-    ok = test_run("poly_ntt", test_poly_ntt, ROUNDS) && ok;
-    ok = test_run("poly_eta1", test_poly_eta1, ROUNDS) && ok;
-    ok = test_run("poly_eta2", test_poly_eta2, ROUNDS) && ok;
-    ok = test_run("poly_eta3", test_poly_eta3, ROUNDS) && ok;
-    ok = test_run("polyvec_bytes", test_polyvec_bytes, ROUNDS) && ok;
-    ok = test_run("polyvec_compression", test_polyvec_compression, ROUNDS) && ok;
+    ok = test_run("ntt", test_ntt) && ok;
+    ok = test_run("poly_bytes", test_poly_bytes) && ok;
+    ok = test_run("poly_compression", test_poly_compression) && ok;
+    ok = test_run("poly_tomsg", test_poly_tomsg) && ok;
+    ok = test_run("poly_frommsg", test_poly_frommsg) && ok;
+    ok = test_run("poly_ntt", test_poly_ntt) && ok;
+    ok = test_run("poly_eta1", test_poly_eta1) && ok;
+    ok = test_run("poly_eta2", test_poly_eta2) && ok;
+    ok = test_run("poly_eta3", test_poly_eta3) && ok;
+    ok = test_run("polyvec_bytes", test_polyvec_bytes) && ok;
+    ok = test_run("polyvec_compression", test_polyvec_compression) && ok;
+    ok = test_run("gen_matrix", test_gen_matrix_0) && ok;
+    ok = test_run("gen_matrix_transposed", test_gen_matrix_1) && ok;
+    ok = test_run("transpose_matrix", test_transpose_matrix) && ok;
     return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

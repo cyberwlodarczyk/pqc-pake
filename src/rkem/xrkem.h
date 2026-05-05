@@ -12,30 +12,16 @@
 
 void XRKEM_keygen(uint8_t *public_key, uint8_t *secret_key);
 
-void XRKEM_rand(
-    uint8_t *rand_public_key,
-    const uint8_t *seed,
-    const uint8_t *public_key);
-
-void XRKEM_derand(
-    uint8_t *public_key,
-    const uint8_t *seed,
-    const uint8_t *rand_public_key);
-
 void XRKEM_encaps(
     uint8_t *ciphertext,
     uint8_t *shared_secret,
-    const uint8_t *public_key);
+    const uint8_t *public_key,
+    const uint8_t *seed);
 
 void XRKEM_decaps(
     uint8_t *shared_secret,
     const uint8_t *ciphertext,
     const uint8_t *secret_key,
     const uint8_t *seed);
-
-void XRKEM_decaps_derand(
-    uint8_t *shared_secret,
-    const uint8_t *ciphertext,
-    const uint8_t *secret_key);
 
 #endif
