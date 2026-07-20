@@ -3,7 +3,12 @@
   "image": "docker.io/cyberwlodarczyk/pqc-pake:dev",
   "customizations": {
     "vscode": {
-      "extensions": ["ms-vscode.cpptools", "ms-vscode.cmake-tools"],
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "ms-python.python",
+        "ms-python.black-formatter"
+      ],
       "settings": {
         "C_Cpp.default.includePath": [
           "${containerEnv:PQC_PAKE_DIR}/include",

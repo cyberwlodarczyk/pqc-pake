@@ -2,6 +2,6 @@
 
 mkdir -p build
 cd build
-cmake ../src
+cmake $@ ../src
 make
 make install

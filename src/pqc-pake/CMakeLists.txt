@@ -5,6 +5,10 @@ add_library(pqc-pake STATIC
     tempo.c
 )
 
+if(TEMPO_FLS_LOG_ITER)
+    add_compile_definitions(TEMPO_FLS_LOG_ITER)
+endif()
+
 target_link_libraries(pqc-pake PUBLIC kyber)
 
 target_include_directories(pqc-pake

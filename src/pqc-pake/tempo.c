@@ -1,3 +1,6 @@
+#ifdef TEMPO_FLS_LOG_ITER
+#include <stdio.h>
+#endif
 #include <string.h>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
@@ -24,6 +27,9 @@ static void fls(KYBER_polyvec *a, const uint8_t *seed, int transposed, int n)
             }
             KYBER_xof_squeezeblocks(buf, 5, &state);
             int ctr = 0;
+#ifdef TEMPO_FLS_LOG_ITER
+            int logged = 0;
+#endif
             for (int i = 0, buf_i = 0; i <= 279; i++, buf_i += 3)
             {
                 uint16_t d[2];
@@ -49,6 +55,13 @@ static void fls(KYBER_polyvec *a, const uint8_t *seed, int transposed, int n)
                     }
                     ctr += flag;
                 }
+#ifdef TEMPO_FLS_LOG_ITER
+                if (ctr == KYBER_N && !logged)
+                {
+                    logged = 1;
+                    printf("%d\n", i + 1);
+                }
+#endif
             }
         }
     }
