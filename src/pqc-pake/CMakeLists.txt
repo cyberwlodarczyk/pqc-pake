@@ -9,6 +9,14 @@ if(TEMPO_FLS_LOG_ITER)
     add_compile_definitions(TEMPO_FLS_LOG_ITER)
 endif()
 
+if(TEMPO_USE_FLSX)
+    add_compile_definitions(TEMPO_USE_FLSX)
+endif()
+
+if(TEMPO_ENCAPS_FORCE_DUMMY)
+    add_compile_definitions(TEMPO_ENCAPS_FORCE_DUMMY)
+endif()
+
 target_link_libraries(pqc-pake PUBLIC kyber)
 
 target_include_directories(pqc-pake

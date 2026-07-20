@@ -5,24 +5,6 @@
 #include <time.h>
 #include "test.h"
 
-int matrix_compare(const KYBER_polyvec *a, const KYBER_polyvec *b)
-{
-    for (int i = 0; i < KYBER_K; i++)
-    {
-        for (int j = 0; j < KYBER_K; j++)
-        {
-            for (int k = 0; k < KYBER_N; k++)
-            {
-                if (a[i].vec[j].coeffs[k] != b[i].vec[j].coeffs[k])
-                {
-                    return 0;
-                }
-            }
-        }
-    }
-    return 1;
-}
-
 #define N 10000
 
 int test_run(const char *name, int t())

@@ -48,11 +48,21 @@ int tempo_gen_matrix_fls()
     return 1;
 }
 
+int tempo_gen_matrix_flsx()
+{
+    uint8_t seed[TEMPO_LEN_SEED];
+    RAND_bytes(seed, TEMPO_LEN_SEED);
+    KYBER_polyvec a[KYBER_K];
+    TEMPO_gen_matrix_flsx(a, seed, 0);
+    return 1;
+}
+
 int main()
 {
     test_speed("kyber", kyber_gen_matrix);
     test_speed("rkem", rkem_gen_matrix);
     test_speed("rkem_fls", rkem_gen_matrix_fls);
     test_speed("tempo_fls", tempo_gen_matrix_fls);
+    test_speed("tempo_flsx", tempo_gen_matrix_flsx);
     return EXIT_SUCCESS;
 }
