@@ -9,6 +9,9 @@
 #include <kyber/symmetric.h>
 #include "tempo.h"
 
+#define FLS_ITERATIONS 280
+#define FLSX_ITERATIONS 185
+
 static void fls(KYBER_polyvec *a, const uint8_t *seed, int transposed, int n)
 {
     xof_state state;
@@ -30,7 +33,7 @@ static void fls(KYBER_polyvec *a, const uint8_t *seed, int transposed, int n)
 #ifdef TEMPO_FLS_LOG_ITER
             int logged = 0;
 #endif
-            for (int i = 0, buf_i = 0; i <= 279; i++, buf_i += 3)
+            for (int i = 0, buf_i = 0; i < FLS_ITERATIONS; i++, buf_i += 3)
             {
                 uint16_t d[2];
                 int d_ok[2];
@@ -69,12 +72,73 @@ static void fls(KYBER_polyvec *a, const uint8_t *seed, int transposed, int n)
     OPENSSL_cleanse(buf, 5 * XOF_BLOCKBYTES);
 }
 
+static int flsx(KYBER_polyvec *a, const uint8_t *seed, int transposed, int n)
+{
+    xof_state state;
+    uint8_t buf[5 * XOF_BLOCKBYTES];
+    int fail = 0;
+    for (uint8_t y = 0; y < n; y++)
+    {
+        for (uint8_t x = 0; x < KYBER_K; x++)
+        {
+            if (transposed)
+            {
+                KYBER_xof_absorb(&state, seed, y, x);
+            }
+            else
+            {
+                KYBER_xof_absorb(&state, seed, x, y);
+            }
+            KYBER_xof_squeezeblocks(buf, 5, &state);
+            int ctr = 0;
+            for (int i = 0, buf_i = 0; i < FLSX_ITERATIONS; i++, buf_i += 3)
+            {
+                uint16_t d[2];
+                int d_ok[2];
+                d[0] = ((buf[buf_i + 0] >> 0) |
+                        ((uint16_t)buf[buf_i + 1] << 8)) &
+                       0xFFF;
+                d[1] = ((buf[buf_i + 1] >> 4) |
+                        ((uint16_t)buf[buf_i + 2] << 4)) &
+                       0xFFF;
+                d_ok[0] = (d[0] < KYBER_Q);
+                d_ok[1] = (d[1] < KYBER_Q);
+                for (int d_i = 0; d_i < 2; d_i++)
+                {
+                    int flag = 0;
+                    for (int j = 0; j < KYBER_N; j++)
+                    {
+                        int match = (j == ctr);
+                        int mask = match * d_ok[d_i];
+                        int16_t *coeffs = a[y].vec[x].coeffs;
+                        coeffs[j] = coeffs[j] * (1 - mask) + d[d_i] * mask;
+                        flag += mask;
+                    }
+                    ctr += flag;
+                }
+            }
+            fail |= ctr < KYBER_N;
+        }
+    }
+    OPENSSL_cleanse(&state, sizeof(xof_state));
+    OPENSSL_cleanse(buf, 5 * XOF_BLOCKBYTES);
+    return !fail - 1;
+}
+
 void TEMPO_gen_matrix_fls(
     KYBER_polyvec *a,
     const uint8_t *seed,
     int tranposed)
 {
     fls(a, seed, tranposed, KYBER_K);
+}
+
+int TEMPO_gen_matrix_flsx(
+    KYBER_polyvec *a,
+    const uint8_t *seed,
+    int tranposed)
+{
+    return flsx(a, seed, tranposed, KYBER_K);
 }
 
 static void hash_1(

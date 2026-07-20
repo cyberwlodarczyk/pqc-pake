@@ -1,12 +1,12 @@
 // ./scripts/build.sh -DTEMPO_FLS_LOG_ITER=1
-// gcc $CFLAGS $LDFLAGS -o tempo_fls_iter tempo_fls_iter.c test.c -lpqc-pake -lkyber -lcrypto
+// gcc $CFLAGS $LDFLAGS -o tempo_fls_iter tempo_fls_iter.c -lpqc-pake -lkyber -lcrypto
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <openssl/rand.h>
 #include <pqc-pake/tempo.h>
 
-#define ITERATIONS 100000
+#define ITERATIONS 1000000
 
 int main()
 {

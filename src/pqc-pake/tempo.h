@@ -40,6 +40,11 @@ void TEMPO_gen_matrix_fls(
     const uint8_t *seed,
     int tranposed);
 
+int TEMPO_gen_matrix_flsx(
+    KYBER_polyvec *a,
+    const uint8_t *seed,
+    int tranposed);
+
 void TEMPO_keygen(
     uint8_t *public_key,
     uint8_t *secret_key,
