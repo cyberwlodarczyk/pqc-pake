@@ -22,7 +22,7 @@ ARG PQC_PAKE_DIR
 ARG CFLAGS
 ARG LDFLAGS
 RUN apt-get update
-RUN apt-get -y install gcc cmake libssl-dev git python3
+RUN apt-get -y install gcc cmake libssl-dev git python3 python3-matplotlib
 COPY --from=build ${PQC_PAKE_DIR} ${PQC_PAKE_DIR}
 ENV PQC_PAKE_DIR=${PQC_PAKE_DIR}
 ENV CFLAGS=${CFLAGS}
