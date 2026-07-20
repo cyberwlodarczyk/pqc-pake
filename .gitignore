@@ -1,6 +1,5 @@
 build
 src/*/*
-!src/*/*.c
-!src/*/*.h
+!src/*/*.*
 tests/*
-!tests/*.c
+!tests/*.*
