@@ -1,3 +1,6 @@
+#ifdef KYBER_SAMPLE_NTT_LOG_ITER
+#include <stdio.h>
+#endif
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -66,8 +69,14 @@ static unsigned int rej_uniform(
     unsigned int ctr, pos;
     uint16_t val0, val1;
     ctr = pos = 0;
+#ifdef KYBER_SAMPLE_NTT_LOG_ITER
+    int i = 0;
+#endif
     while (ctr < len && pos + 3 <= buflen)
     {
+#ifdef KYBER_SAMPLE_NTT_LOG_ITER
+        i++;
+#endif
         val0 = ((buf[pos + 0] >> 0) | ((uint16_t)buf[pos + 1] << 8)) & 0xFFF;
         val1 = ((buf[pos + 1] >> 4) | ((uint16_t)buf[pos + 2] << 4)) & 0xFFF;
         pos += 3;
@@ -76,6 +85,9 @@ static unsigned int rej_uniform(
         if (ctr < len && val1 < KYBER_Q)
             r[ctr++] = val1;
     }
+#ifdef KYBER_SAMPLE_NTT_LOG_ITER
+    printf("%d\n", i);
+#endif
     return ctr;
 }
 

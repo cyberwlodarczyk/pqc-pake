@@ -3,6 +3,10 @@ add_library(kyber STATIC
     reduce.c symmetric-shake.c verify.c
 )
 
+if(KYBER_SAMPLE_NTT_LOG_ITER)
+    add_compile_definitions(KYBER_SAMPLE_NTT_LOG_ITER)
+endif()
+
 target_include_directories(kyber
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
