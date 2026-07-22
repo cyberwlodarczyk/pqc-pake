@@ -1,7 +1,5 @@
 #!/bin/bash
 
-mkdir -p build
-cd build
-cmake $@ ../src
-make
-make install
+cmake -S src -B build $@ -DCMAKE_INSTALL_PREFIX="$PWD/dist"
+cmake --build build
+cmake --install build
