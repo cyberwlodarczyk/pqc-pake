@@ -1,5 +1,3 @@
-// gcc $CFLAGS $LDFLAGS -o ntt_init ntt_init.c -lrkem
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <rkem/ntt.h>

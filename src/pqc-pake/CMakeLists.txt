@@ -17,6 +17,8 @@ if(TEMPO_ENCAPS_FORCE_DUMMY)
     add_compile_definitions(TEMPO_ENCAPS_FORCE_DUMMY)
 endif()
 
+target_compile_options(pqc-pake PRIVATE -Wall -Wextra -O3 -march=native)
+
 target_link_libraries(pqc-pake PUBLIC kyber)
 
 target_include_directories(pqc-pake

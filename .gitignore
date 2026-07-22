@@ -3,5 +3,6 @@ dist
 .venv
 src/*/*
 !src/*/*.*
+!src/*/Makefile
 tests/*
 !tests/*.*

@@ -2,6 +2,8 @@ add_library(rkem STATIC
     cbd.c ntt.c poly.c polyvec.c reduce.c rkem.c xrkem.c yrkem.c
 )
 
+target_compile_options(rkem PRIVATE -Wall -Wextra -O3 -march=native)
+
 target_link_libraries(rkem PUBLIC kyber)
 
 target_include_directories(rkem

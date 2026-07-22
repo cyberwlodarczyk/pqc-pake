@@ -271,7 +271,9 @@ void TEMPO_encaps(uint8_t *ciphertext, uint8_t *tag, uint8_t *shared_secret, con
         r_seed[i] = v_hash[i] ^ apk->u[i];
     }
     KYBER_polyvec r;
+#if defined(TEMPO_USE_FLSX) || defined(TEMPO_ENCAPS_FORCE_DUMMY)
     int dummy;
+#endif
 #ifdef TEMPO_USE_FLSX
     dummy = hash_1(&r, sess, apk->seed, r_seed) == -1;
 #elif defined(TEMPO_ENCAPS_FORCE_DUMMY)

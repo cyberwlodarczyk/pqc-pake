@@ -1,5 +1,3 @@
-// gcc $CFLAGS $LDFLAGS -o rkem_init rkem_init.c -lrkem -lkyber -lcrypto
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <openssl/rand.h>

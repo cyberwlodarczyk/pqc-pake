@@ -7,6 +7,8 @@ if(KYBER_SAMPLE_NTT_LOG_ITER)
     add_compile_definitions(KYBER_SAMPLE_NTT_LOG_ITER)
 endif()
 
+target_compile_options(kyber PRIVATE -Wall -Wextra -O3 -march=native)
+
 target_include_directories(kyber
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
